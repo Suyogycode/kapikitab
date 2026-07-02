@@ -6,7 +6,7 @@ import {
   Sparkles, Brain, ArrowRight, ShieldCheck, 
   Atom, Globe, Rocket, BookOpen
 } from 'lucide-react';
-import Link from 'next/link'; // Replaces useNavigate
+import Link from 'next/link';
 
 export default function Home() {
   const fadeUp: Variants = {
@@ -26,7 +26,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#FDFCF8] text-stone-800 font-sans overflow-x-hidden selection:bg-emerald-100">
-      
+
       {/* Navbar */}
       <nav className="fixed top-0 w-full z-50 bg-[#FDFCF8]/80 backdrop-blur-md border-b border-stone-100">
         <div className="max-w-7xl mx-auto px-8 py-5 flex justify-between items-center">
@@ -64,9 +64,9 @@ export default function Home() {
             Question <br />
             everything.
           </h1>
-          
+
           <p className="text-xl md:text-2xl text-stone-500 leading-relaxed mb-12 font-light max-w-lg">
-            We turn abstract concepts into breathtaking interactive journeys. Don't just memorize the world—explore it, simulate it, and understand it.
+            We turn abstract concepts into breathtaking interactive journeys. Don&apos;t just memorize the world—explore it, simulate it, and understand it.
           </p>
 
           <Link href="/signup">
@@ -86,11 +86,11 @@ export default function Home() {
           initial="hidden"
           animate="visible"
           variants={fadeLeft}
-          className="relative lg:w-1/2 h-125 w-full flex items-center justify-center"
+          className="relative lg:w-1/2 h-[31.25rem] w-full flex items-center justify-center"
         >
-          <div className="absolute w-100 h-100 bg-emerald-100/50 rounded-full blur-3xl" />
-          <div className="absolute w-75 h-75 bg-amber-100/50 rounded-full blur-3xl translate-x-20 translate-y-20" />
-          
+          <div className="absolute w-[25rem] h-[25rem] bg-emerald-100/50 rounded-full blur-3xl" />
+          <div className="absolute w-[18.75rem] h-[18.75rem] bg-amber-100/50 rounded-full blur-3xl translate-x-20 translate-y-20" />
+
           <motion.div 
             animate={{ y: [-10, 10, -10], rotate: [0, 2, 0] }} transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
             className="absolute top-10 right-10 bg-white/80 backdrop-blur-xl p-6 rounded-3xl border border-white shadow-xl"
@@ -118,7 +118,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-8 flex flex-col-reverse lg:flex-row items-center gap-20">
           <motion.div 
             initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={fadeRight}
-            className="lg:w-1/2 relative h-100 w-full flex items-center"
+            className="lg:w-1/2 relative h-[25rem] w-full flex items-center"
           >
              <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] bg-[length:20px_20px] opacity-50 rounded-3xl" />
              <div className="relative z-10 space-y-6 ml-10">
