@@ -4,15 +4,14 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PenTool, BrainCircuit, Map, Beaker, Compass, User, Book, X } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation'; // Next.js hook to read the URL
+import { usePathname } from 'next/navigation';
 
-// Create the bridge for our pages to read the active subject
 export const DashboardContext = React.createContext({
   activeSubject: 'math',
   setActiveSubject: (subject: string) => {}
 });
 
-// --- PROFILE OVERLAY COMPONENT (Kept intact) ---
+// --- PROFILE OVERLAY COMPONENT ---
 const ProfileOverlay = ({ isOpen, onClose, activeTab, setActiveTab }: any) => {
   const tabs = [
     { id: 'profile', label: 'Profile' },
@@ -26,23 +25,23 @@ const ProfileOverlay = ({ isOpen, onClose, activeTab, setActiveTab }: any) => {
         <>
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 bg-stone-900/20 backdrop-blur-sm z-60" />
           <motion.div initial={{ opacity: 0, y: 40, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20, scale: 0.95 }} transition={{ type: "spring", damping: 25, stiffness: 300 }} className="fixed top-24 left-4 right-4 bottom-24 lg:left-20 lg:right-20 lg:bottom-10 bg-[#FDFCF8]/95 backdrop-blur-3xl border border-white shadow-2xl rounded-[2.5rem] z-70 flex flex-col overflow-hidden">
-            <div className="w-full flex items-center justify-between p-6 bg-white/50 border-b border-stone-100">
-              <div className="flex space-x-1 p-1 bg-stone-200/50 backdrop-blur-xl rounded-4xl border border-stone-100">
+            <div className="w-full flex items-center justify-between p-4 sm:p-6 bg-white/50 border-b border-stone-100">
+              <div className="flex space-x-0 sm:space-x-1 p-1 bg-stone-200/50 backdrop-blur-xl rounded-4xl border border-stone-100 overflow-x-auto no-scrollbar">
                 {tabs.map((tab) => {
                   const isActive = activeTab === tab.id;
                   return (
-                    <button key={tab.id} onClick={() => setActiveTab(tab.id)} className="relative px-6 py-2 rounded-full text-sm font-medium transition-colors z-10">
+                    <button key={tab.id} onClick={() => setActiveTab(tab.id)} className="relative px-4 sm:px-6 py-2 rounded-full text-xs sm:text-sm font-medium transition-colors z-10 whitespace-nowrap">
                       {isActive && <motion.div layoutId="profileOverlayTab" className="absolute inset-0 bg-white shadow-sm border border-stone-200 rounded-full -z-10" transition={{ type: "spring", stiffness: 400, damping: 30 }} />}
                       <span className={isActive ? 'text-stone-900' : 'text-stone-500 hover:text-stone-700'}>{tab.label}</span>
                     </button>
                   );
                 })}
               </div>
-              <button onClick={onClose} className="h-10 w-10 bg-white border border-stone-200 shadow-sm rounded-full flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-stone-50 transition-colors">
-                <X size={20} />
+              <button onClick={onClose} className="shrink-0 ml-2 h-8 w-8 sm:h-10 sm:w-10 bg-white border border-stone-200 shadow-sm rounded-full flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-stone-50 transition-colors">
+                <X size={18} className="sm:w-5 sm:h-5" />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto no-scrollbar p-6 relative flex items-center justify-center text-stone-400 font-serif text-2xl h-full">
+            <div className="flex-1 overflow-y-auto no-scrollbar p-6 relative flex items-center justify-center text-stone-400 font-serif text-xl sm:text-2xl h-full">
                 {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Data Syncing...
             </div>
           </motion.div>
@@ -52,14 +51,14 @@ const ProfileOverlay = ({ isOpen, onClose, activeTab, setActiveTab }: any) => {
   );
 };
 
-// --- LIQUID GLASS MENU (Kept intact) ---
+// --- LIQUID GLASS MENU ---
 const LiquidGlassMenu = ({ items, activeItem, setActiveItem, isHorizontal = true }: any) => {
   return (
-    <div className={`flex ${isHorizontal ? 'flex-row space-x-2' : 'flex-col space-y-2'} p-2 bg-white/70 backdrop-blur-2xl border border-white shadow-xl rounded-4xl`}>
+    <div className={`flex ${isHorizontal ? 'flex-row space-x-2 overflow-x-auto no-scrollbar' : 'flex-col space-y-2'} p-2 bg-white/70 backdrop-blur-2xl border border-white shadow-xl rounded-4xl`}>
       {items.map((item: any) => {
         const isActive = activeItem === item.id;
         return (
-          <button key={item.id} onClick={() => setActiveItem(item.id)} className="relative px-6 py-3 rounded-full text-sm font-medium transition-colors z-10 whitespace-nowrap">
+          <button key={item.id} onClick={() => setActiveItem(item.id)} className="relative px-4 sm:px-6 py-2 sm:py-3 rounded-full text-xs sm:text-sm font-medium transition-colors z-10 whitespace-nowrap">
             {isActive && <motion.div layoutId={`liquidHighlight-${items[0].id}`} className="absolute inset-0 bg-white/90 shadow-sm border border-white/50 rounded-full -z-10" transition={{ type: "spring", stiffness: 400, damping: 30 }} />}
             <span className={isActive ? 'text-stone-900' : 'text-stone-500 hover:text-stone-700'}>{item.label}</span>
           </button>
@@ -73,7 +72,7 @@ const LiquidGlassMenu = ({ items, activeItem, setActiveItem, isHorizontal = true
 // MASTER DASHBOARD LAYOUT
 // ============================================================================
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname(); // Reads current URL
+  const pathname = usePathname(); 
   
   const [isProfileOverlayOpen, setIsProfileOverlayOpen] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
@@ -93,18 +92,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const subjectTabs = [{ id: 'math', label: 'Mathematics' }, { id: 'physics', label: 'Physics' }, { id: 'chemistry', label: 'Chemistry' }, { id: 'biology', label: 'Biology' }, { id: 'computer', label: 'Computer Sci' }];
 
   return (
-    <div className="h-screen w-full bg-[#FDFCF8] overflow-hidden flex flex-col relative selection:bg-emerald-100">
+    // Added overscroll-none to the root container to stop the rubber-band bounce effect
+    <div className="h-screen w-full bg-[#FDFCF8] overflow-hidden flex flex-col relative selection:bg-emerald-100 overscroll-none">
       
       {/* TOP FLOATING HEADERS */}
-      <header className="absolute top-0 w-full z-50 pointer-events-none p-6 lg:p-8 flex justify-between items-start">
+      <header className="absolute top-0 w-full z-50 pointer-events-none p-4 sm:p-6 lg:p-8 flex justify-between items-start">
         {/* Profile Widget */}
         <div className="pointer-events-auto relative flex flex-col items-start space-y-4">
-          <button onClick={() => { setShowProfile(!showProfile); setShowSubject(false); }} className="h-14 w-14 bg-white/70 backdrop-blur-xl border border-white shadow-lg rounded-full flex items-center justify-center transition-transform hover:scale-105 z-20">
-            <User className="text-stone-700" size={24} />
+          <button onClick={() => { setShowProfile(!showProfile); setShowSubject(false); }} className="h-12 w-12 sm:h-14 sm:w-14 bg-white/70 backdrop-blur-xl border border-white shadow-lg rounded-full flex items-center justify-center transition-transform hover:scale-105 z-20">
+            <User className="text-stone-700 w-5 h-5 sm:w-6 sm:h-6" />
           </button>
           <AnimatePresence>
             {showProfile && (
-              <motion.div initial={{ opacity: 0, x: -20, scale: 0.95 }} animate={{ opacity: 1, x: 0, scale: 1 }} exit={{ opacity: 0, x: -20, scale: 0.95 }} className="absolute top-16 left-0 origin-top-left">
+              <motion.div initial={{ opacity: 0, x: -20, scale: 0.95 }} animate={{ opacity: 1, x: 0, scale: 1 }} exit={{ opacity: 0, x: -20, scale: 0.95 }} className="absolute top-14 sm:top-16 left-0 origin-top-left max-w-[90vw]">
                 <LiquidGlassMenu items={profileTabs} activeItem={activeProfileTab} setActiveItem={(id: string) => { setActiveProfileTab(id); setShowProfile(false); setIsProfileOverlayOpen(true); }} isHorizontal={true} />
               </motion.div>
             )}
@@ -113,12 +113,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Subject Widget */}
         <div className="pointer-events-auto relative flex flex-col items-end space-y-4">
-          <button onClick={() => { setShowSubject(!showSubject); setShowProfile(false); }} className="h-14 w-14 bg-white/70 backdrop-blur-xl border border-white shadow-lg rounded-full flex items-center justify-center transition-transform hover:scale-105 z-20">
-            <Book className="text-emerald-700" size={24} />
+          <button onClick={() => { setShowSubject(!showSubject); setShowProfile(false); }} className="h-12 w-12 sm:h-14 sm:w-14 bg-white/70 backdrop-blur-xl border border-white shadow-lg rounded-full flex items-center justify-center transition-transform hover:scale-105 z-20">
+            <Book className="text-emerald-700 w-5 h-5 sm:w-6 sm:h-6" />
           </button>
           <AnimatePresence>
             {showSubject && (
-              <motion.div initial={{ opacity: 0, y: -20, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -20, scale: 0.95 }} className="absolute top-16 right-0 origin-top-right">
+              <motion.div initial={{ opacity: 0, y: -20, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -20, scale: 0.95 }} className="absolute top-14 sm:top-16 right-0 origin-top-right">
                 <LiquidGlassMenu items={subjectTabs} activeItem={activeSubject} setActiveItem={(id: string) => { setActiveSubject(id); setShowSubject(false); }} isHorizontal={false} />
               </motion.div>
             )}
@@ -126,29 +126,28 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </header>
 
-{/* MAIN SWIPEABLE CONTENT AREA */}
       {/* MAIN SWIPEABLE CONTENT AREA */}
       <DashboardContext.Provider value={{ activeSubject, setActiveSubject }}>
-        <main className="flex-1 relative w-full h-full pt-24 pb-32 overflow-y-auto no-scrollbar px-6">
+        {/* Added overscroll-none here as well to aggressively prevent bouncing inside the scroll area */}
+        <main className="flex-1 relative w-full h-full pt-20 pb-28 sm:pt-24 sm:pb-32 overflow-y-auto no-scrollbar overscroll-none">
           {children}
         </main>
       </DashboardContext.Provider>
 
       {/* BOTTOM NAVIGATION BAR */}
-      <nav className="fixed bottom-0 w-full z-50 pointer-events-none px-6 pb-8 pt-10 bg-gradient-to-t from-[#FDFCF8] via-[#FDFCF8]/90 to-transparent">
-        <div className="max-w-md mx-auto pointer-events-auto bg-white/80 backdrop-blur-2xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[2.5rem] flex justify-between items-center px-4 py-3 relative">
+      <nav className="fixed bottom-0 w-full z-50 pointer-events-none px-4 sm:px-6 pb-6 sm:pb-8 pt-10 bg-gradient-to-t from-[#FDFCF8] via-[#FDFCF8]/90 to-transparent">
+        <div className="max-w-md mx-auto pointer-events-auto bg-white/80 backdrop-blur-2xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[2.5rem] flex justify-between items-center px-3 sm:px-4 py-2 sm:py-3 relative">
           {navItems.map((item) => {
             const Icon = item.icon;
-            // The icon is active if the current URL matches the button's href
             const isActive = pathname === item.href || (pathname === '/dashboard' && item.id === 'lesson'); 
             
             return (
-              <Link href={item.href} key={item.id} className="relative flex flex-col items-center justify-center w-14 h-14 group">
+              <Link href={item.href} key={item.id} className="relative flex flex-col items-center justify-center w-12 h-12 sm:w-14 sm:h-14 group">
                 <motion.div animate={{ scale: isActive ? 1.2 : 1, y: isActive ? -4 : 0 }} transition={{ type: "spring", stiffness: 300, damping: 20 }} className={`${isActive ? 'text-emerald-600' : 'text-stone-400 group-hover:text-stone-600'}`}>
-                  <Icon size={24} strokeWidth={isActive ? 2.5 : 2} />
+                  <Icon className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={isActive ? 2.5 : 2} />
                 </motion.div>
                 <AnimatePresence>
-                  {isActive && <motion.span initial={{ opacity: 0, y: 10, scale: 0.5 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 5, scale: 0.5 }} className="absolute -bottom-1 text-[10px] font-bold text-emerald-600 tracking-wide">{item.label}</motion.span>}
+                  {isActive && <motion.span initial={{ opacity: 0, y: 10, scale: 0.5 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 5, scale: 0.5 }} className="absolute -bottom-1 text-[9px] sm:text-[10px] font-bold text-emerald-600 tracking-wide">{item.label}</motion.span>}
                 </AnimatePresence>
               </Link>
             );

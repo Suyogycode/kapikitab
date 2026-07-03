@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 type Option = {
   id: string;
   label: string;
-  desc?: string; // The '?' tells TypeScript this is optional!
+  desc?: string;
 };
 
 type Step = {
@@ -19,19 +19,17 @@ type Step = {
 };
 
 // --- MASCOT SVG COMPONENT ---
-const CuteMascot = ({ isTalking }: { isTalking: boolean }) => (
+// Added a className prop so we can scale him down on mobile
+const CuteMascot = ({ isTalking, className = "w-48 h-48" }: { isTalking: boolean, className?: string }) => (
   <motion.svg 
     viewBox="0 0 200 200" 
-    className="w-48 h-48 drop-shadow-2xl"
+    className={`drop-shadow-2xl ${className}`}
     animate={{ y: [0, -10, 0] }} 
     transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
   >
-    {/* Body */}
     <rect x="40" y="60" width="120" height="100" rx="40" fill="#0d3827" /> 
-    {/* Screen/Face */}
     <rect x="55" y="80" width="90" height="60" rx="20" fill="#FAF9F5" />
     
-    {/* Eyes */}
     <motion.circle cx="75" cy="110" r="8" fill="#1c1917" 
       animate={isTalking ? { scaleY: [1, 0.2, 1] } : { scaleY: 1 }} 
       transition={{ duration: 0.3, repeat: isTalking ? Infinity : 0, repeatDelay: 1 }}
@@ -41,12 +39,10 @@ const CuteMascot = ({ isTalking }: { isTalking: boolean }) => (
       transition={{ duration: 0.3, repeat: isTalking ? Infinity : 0, repeatDelay: 1 }}
     />
     
-    {/* Glasses */}
     <rect x="60" y="95" width="30" height="30" rx="10" fill="none" stroke="#d97706" strokeWidth="4" />
     <rect x="110" y="95" width="30" height="30" rx="10" fill="none" stroke="#d97706" strokeWidth="4" />
     <line x1="90" y1="110" x2="110" y2="110" stroke="#d97706" strokeWidth="4" />
     
-    {/* Antenna */}
     <line x1="100" y1="60" x2="100" y2="30" stroke="#0d3827" strokeWidth="6" strokeLinecap="round" />
     <circle cx="100" cy="25" r="8" fill="#d97706" />
   </motion.svg>
@@ -91,7 +87,7 @@ const HUMOR_LINES: Record<string, Record<string, string>> = {
   subject: {
     'Math': "Mathematics! The universal language. I calculate a 99.9% chance we'll have fun.",
     'Physics': "Physics! Because figuring out how the universe works is better than sleep.",
-    'Chemistry': "Chemistry! Let's bond over some explosive ideas. (Safely, in a simulation).",
+    'Chemistry': "Chemistry! Let's bond over some explosive ideas.",
     'Biology': "Biology! The study of life. Let's mutate your brain cells with knowledge.",
     'Computer': "Computer Science! Ah, my native tongue. 01001000 01101001!"
   },
@@ -245,46 +241,49 @@ export default function SetProfile() {
   const progressPercentage = (currentStep / steps.length) * 100;
 
   return (
-    <div className="min-h-screen bg-[#FDFCF8] flex flex-col lg:flex-row overflow-hidden font-sans text-stone-800">
+    <div className="min-h-screen bg-[#FDFCF8] flex flex-col lg:flex-row font-sans text-stone-800 overflow-x-hidden">
       
-      {/* LEFT COLUMN: Mascot & Progress Indicator */}
-      <div className="lg:w-5/12 bg-kapi-dark text-white p-10 flex flex-col justify-between relative overflow-hidden">
+      {/* LEFT COLUMN / MOBILE HEADER: Mascot & Progress Indicator */}
+      <div className="w-full lg:w-5/12 bg-kapi-dark text-white p-5 lg:p-10 flex flex-col justify-between relative overflow-hidden shrink-0 shadow-md lg:shadow-none z-20">
         <div className="absolute top-[-10%] left-[-20%] w-[80%] h-[80%] bg-white/5 rounded-full blur-3xl pointer-events-none" />
         
-        <div className="relative z-10 flex justify-between items-center">
+        {/* Top Bar */}
+        <div className="relative z-10 flex justify-between items-center mb-4 lg:mb-0">
           {currentStep > 0 ? (
             <button 
               onClick={() => setCurrentStep(prev => prev - 1)}
-              className="p-2 bg-white/10 hover:bg-white/20 rounded-full backdrop-blur-md transition-colors"
+              className="p-1.5 lg:p-2 bg-white/10 hover:bg-white/20 rounded-full backdrop-blur-md transition-colors"
             >
-              <ArrowLeft size={20} />
+              <ArrowLeft size={18} className="lg:w-5 lg:h-5" />
             </button>
           ) : (
-            <div />
+            <div className="w-8" /> 
           )}
-          <span className="font-serif font-bold text-xl tracking-tight text-white/90">Kapikitab.</span>
+          <span className="font-serif font-bold text-lg lg:text-xl tracking-tight text-white/90">Kapikitab.</span>
         </div>
 
-        <div className="relative z-10 flex flex-col items-center text-center mt-12 grow justify-center">
-          <CuteMascot isTalking={isTalking} />
+        {/* Mascot & Dialogue - Horizontal on Mobile, Vertical on Desktop */}
+        <div className="relative z-10 flex flex-row lg:flex-col items-center lg:justify-center gap-4 lg:gap-0 mt-2 lg:mt-12 grow">
+          <CuteMascot isTalking={isTalking} className="w-20 h-20 sm:w-24 sm:h-24 lg:w-48 lg:h-48 shrink-0" />
           
           <motion.div 
             key={mascotText}
             initial={{ opacity: 0, y: 10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            className="mt-8 bg-white text-stone-800 p-5 rounded-3xl rounded-tl-none shadow-xl border border-stone-100 max-w-xs relative"
+            className="lg:mt-8 bg-white text-stone-800 p-3 lg:p-5 rounded-2xl lg:rounded-3xl lg:rounded-tl-none shadow-xl border border-stone-100 w-full lg:max-w-xs relative text-left lg:text-center"
           >
-            <Sparkles size={16} className="absolute -top-2 -right-2 text-amber-500" />
-            <p className="font-medium text-sm leading-relaxed">{mascotText}</p>
+            <Sparkles size={14} className="absolute -top-1.5 -right-1.5 lg:-top-2 lg:-right-2 text-amber-500 hidden lg:block" />
+            <p className="font-medium text-xs sm:text-sm leading-snug lg:leading-relaxed">{mascotText}</p>
           </motion.div>
         </div>
 
-        <div className="relative z-10 mt-12">
-          <div className="flex justify-between text-xs font-medium text-kapi-green mb-3 uppercase tracking-wider">
+        {/* Progress Bar */}
+        <div className="relative z-10 mt-6 lg:mt-12">
+          <div className="flex justify-between text-[10px] lg:text-xs font-medium text-kapi-green mb-2 lg:mb-3 uppercase tracking-wider">
             <span>Profile Setup</span>
             <span>{Math.round(progressPercentage)}%</span>
           </div>
-          <div className="h-2 w-full bg-stone-950 rounded-full overflow-hidden">
+          <div className="h-1.5 lg:h-2 w-full bg-stone-950 rounded-full overflow-hidden">
             <motion.div 
               className="h-full bg-kapi-green rounded-full"
               initial={{ width: 0 }}
@@ -296,24 +295,24 @@ export default function SetProfile() {
       </div>
 
       {/* RIGHT COLUMN: Interactive Multistep Card */}
-      <div className="lg:w-7/12 flex items-center justify-center p-8 lg:p-20 relative">
+      <div className="w-full lg:w-7/12 flex flex-col justify-start lg:justify-center p-6 sm:p-10 lg:p-20 relative grow z-10 overflow-y-auto">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentStep}
-            initial={{ opacity: 0, x: 40 }}
+            initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -40 }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
-            className="w-full max-w-xl"
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="w-full max-w-xl mx-auto"
           >
-            <span className="text-kapi-green font-bold tracking-widest text-xs uppercase mb-4 block">
+            <span className="text-kapi-green font-bold tracking-widest text-[10px] lg:text-xs uppercase mb-3 block">
               Step {currentStep + 1} of {steps.length}
             </span>
-            <h2 className="text-4xl md:text-5xl font-serif font-medium text-stone-900 leading-tight mb-10">
+            <h2 className="text-2xl sm:text-3xl lg:text-5xl font-serif font-medium text-stone-900 leading-tight mb-6 lg:mb-10">
               {currentData.question}
             </h2>
 
-            <div className="space-y-4">
+            <div className="space-y-3 lg:space-y-4">
             {currentData.options.map((option) => {
             const isSelected = Array.isArray(answers[currentData.id]) 
                 ? (answers[currentData.id] as string[]).includes(option.id)
@@ -325,27 +324,27 @@ export default function SetProfile() {
                     whileHover={{ scale: 1.01 }}
                     whileTap={{ scale: 0.99 }}
                     onClick={() => handleSelect(option.id)}
-                    className={`w-full text-left p-6 rounded-3xl border-2 transition-all duration-300 flex items-center justify-between group ${
+                    className={`w-full text-left p-4 lg:p-6 rounded-2xl lg:rounded-3xl border-2 transition-all duration-300 flex items-center justify-between group ${
                       isSelected 
-                        ? 'border-kapi-green bg-emerald-50/30 shadow-md' 
+                        ? 'border-kapi-green bg-emerald-50/30 shadow-sm' 
                         : 'border-stone-200 hover:border-emerald-300 bg-white hover:shadow-sm'
                     }`}
                   >
-                    <div>
-                      <h3 className={`text-xl font-medium ${isSelected ? 'text-kapi-dark' : 'text-stone-800'}`}>
+                    <div className="pr-4">
+                      <h3 className={`text-lg lg:text-xl font-medium ${isSelected ? 'text-kapi-dark' : 'text-stone-800'}`}>
                         {option.label}
                       </h3>
                       {option.desc && (
-                        <p className={`text-sm mt-1 ${isSelected ? 'text-emerald-800' : 'text-stone-500'}`}>
+                        <p className={`text-xs lg:text-sm mt-1 ${isSelected ? 'text-emerald-800' : 'text-stone-500'}`}>
                           {option.desc}
                         </p>
                       )}
                     </div>
                     
-                    <div className={`h-6 w-6 rounded-full border flex items-center justify-center transition-colors ${
+                    <div className={`shrink-0 h-5 w-5 lg:h-6 lg:w-6 rounded-full border flex items-center justify-center transition-colors ${
                       isSelected ? 'border-kapi-green bg-kapi-green' : 'border-stone-300 group-hover:border-emerald-400'
                     }`}>
-                      {isSelected && <Check size={14} className="text-white" />}
+                      {isSelected && <Check size={12} className="text-white lg:w-3.5 lg:h-3.5" />}
                     </div>
                   </motion.button>
                 );
@@ -357,17 +356,17 @@ export default function SetProfile() {
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="mt-10 flex justify-end"
+                  className="mt-8 lg:mt-10 flex justify-end pb-10 lg:pb-0"
                 >
                   <button 
                     onClick={handleNext}
                     disabled={isSaving}
-                    className="inline-flex items-center space-x-2 bg-stone-900 text-white px-8 py-4 rounded-full font-medium hover:bg-stone-800 transition-colors shadow-lg shadow-stone-900/10 disabled:opacity-50"
+                    className="inline-flex items-center space-x-2 bg-stone-900 text-white px-6 py-3 lg:px-8 lg:py-4 rounded-full text-sm lg:text-base font-medium hover:bg-stone-800 transition-colors shadow-lg shadow-stone-900/10 disabled:opacity-50"
                   >
                     <span>
                       {isSaving ? 'Saving...' : currentStep === steps.length - 1 ? 'Complete Profile' : 'Continue'}
                     </span>
-                    {!isSaving && <ChevronRight size={20} />}
+                    {!isSaving && <ChevronRight size={18} className="lg:w-5 lg:h-5" />}
                   </button>
                 </motion.div>
               )}

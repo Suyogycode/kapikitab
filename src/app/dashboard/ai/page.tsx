@@ -2,15 +2,42 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Sparkles, User, Paperclip, X } from 'lucide-react';
+import { Send, User, Paperclip, X } from 'lucide-react';
 import Image from 'next/image';
 
 type Message = {
   id: number;
   sender: 'ai' | 'user';
   text: string;
-  image?: string; // Base64 string for displaying uploaded images
+  image?: string; 
 };
+
+// --- KAPI AVATAR COMPONENT ---
+// Adapted from the SetProfile page to serve as a sleek chat avatar
+const KapiAvatar = ({ isTyping = false, className = "w-8 h-8" }: { isTyping?: boolean, className?: string }) => (
+  <motion.svg 
+    viewBox="0 0 200 200" 
+    className={`drop-shadow-sm ${className}`}
+  >
+    <rect x="40" y="60" width="120" height="100" rx="40" fill="#0d3827" /> 
+    <rect x="55" y="80" width="90" height="60" rx="20" fill="#FAF9F5" />
+    
+    <motion.circle cx="75" cy="110" r="8" fill="#1c1917" 
+      animate={isTyping ? { scaleY: [1, 0.2, 1] } : { scaleY: 1 }} 
+      transition={{ duration: 0.4, repeat: isTyping ? Infinity : 0, repeatDelay: 0.8 }}
+    />
+    <motion.circle cx="125" cy="110" r="8" fill="#1c1917" 
+      animate={isTyping ? { scaleY: [1, 0.2, 1] } : { scaleY: 1 }} 
+      transition={{ duration: 0.4, repeat: isTyping ? Infinity : 0, repeatDelay: 0.8 }}
+    />
+    
+    <rect x="60" y="95" width="30" height="30" rx="10" fill="none" stroke="#d97706" strokeWidth="4" />
+    <rect x="110" y="95" width="30" height="30" rx="10" fill="none" stroke="#d97706" strokeWidth="4" />
+    <line x1="90" y1="110" x2="110" y2="110" stroke="#d97706" strokeWidth="4" />
+    <line x1="100" y1="60" x2="100" y2="30" stroke="#0d3827" strokeWidth="6" strokeLinecap="round" />
+    <circle cx="100" cy="25" r="8" fill="#d97706" />
+  </motion.svg>
+);
 
 export default function AiPage() {
   const [messages, setMessages] = useState<Message[]>([
@@ -23,7 +50,6 @@ export default function AiPage() {
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   
-  // File Upload State
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [mimeType, setMimeType] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -37,7 +63,6 @@ export default function AiPage() {
     scrollToBottom();
   }, [messages, isTyping, selectedImage]);
 
-  // Handle file selection and convert to Base64
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -54,7 +79,6 @@ export default function AiPage() {
     };
     reader.readAsDataURL(file);
     
-    // Reset input so the same file can be selected again if needed
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -62,7 +86,6 @@ export default function AiPage() {
     e.preventDefault();
     if (!inputValue.trim() && !selectedImage) return;
 
-    // 1. Render User Message immediately
     const newUserMsg: Message = { 
       id: Date.now(), 
       sender: 'user', 
@@ -75,13 +98,11 @@ export default function AiPage() {
     const currentImage = selectedImage;
     const currentMimeType = mimeType;
     
-    // Reset inputs
     setInputValue("");
     setSelectedImage(null);
     setMimeType(null);
     setIsTyping(true);
 
-    // 2. Call the Gemini API Route
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
@@ -90,14 +111,13 @@ export default function AiPage() {
           text: currentInput,
           imageBase64: currentImage,
           mimeType: currentMimeType,
-          threadId: "global" // <--- This connects it to the master Dashboard memory room
+          threadId: "global"
         }),
       });
 
       if (!res.ok) throw new Error("API Network error");
       
       const data = await res.json();
-      
       const newAiMsg: Message = { id: Date.now() + 1, sender: 'ai', text: data.text };
       setMessages(prev => [...prev, newAiMsg]);
     } catch (error) {
@@ -109,138 +129,153 @@ export default function AiPage() {
     }
   };
 
+  const canSend = (inputValue.trim() || selectedImage) && !isTyping;
+
   return (
-    <div className="h-full w-full flex flex-col relative max-w-4xl mx-auto">
+    <div className="h-full w-full flex flex-col relative bg-[#FDFCF8]">
       
-      {/* --- SCROLLABLE CHAT AREA --- */}
-      <div className="flex-1 overflow-y-auto no-scrollbar px-2 lg:px-8 pt-8 pb-40 space-y-8">
-        
-        <AnimatePresence>
-          {messages.map((msg) => {
-            const isAi = msg.sender === 'ai';
-            
-            return (
-              <motion.div
-                key={msg.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={`flex w-full ${isAi ? 'justify-start' : 'justify-end'}`}
-              >
-                <div className={`flex max-w-[85%] md:max-w-[70%] ${isAi ? 'flex-row' : 'flex-row-reverse'}`}>
-                  
-                  <div className={`shrink-0 flex items-center justify-center h-10 w-10 rounded-full shadow-sm mt-auto mb-2 ${
-                    isAi ? 'bg-emerald-100 border border-emerald-200 mr-4' : 'bg-stone-200 border border-stone-300 ml-4'
-                  }`}>
-                    {isAi ? <Sparkles size={18} className="text-emerald-700" /> : <User size={18} className="text-stone-600" />}
+      {/* --- SCROLLABLE CHAT AREA (Document Style) --- */}
+      <div className="flex-1 overflow-y-auto no-scrollbar w-full pt-8 pb-40">
+        <div className="max-w-3xl mx-auto flex flex-col space-y-6 px-4 sm:px-6">
+          <AnimatePresence>
+            {messages.map((msg) => {
+              const isAi = msg.sender === 'ai';
+              
+              return (
+                <motion.div
+                  key={msg.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="w-full flex gap-4 group"
+                >
+                  {/* Avatar */}
+                  <div className="shrink-0 pt-1">
+                    {isAi ? (
+                      <KapiAvatar className="w-8 h-8 sm:w-10 sm:h-10" />
+                    ) : (
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-stone-200 border border-stone-300 flex items-center justify-center text-stone-600 shadow-sm">
+                        <User size={18} />
+                      </div>
+                    )}
                   </div>
 
-                  <div className={`p-5 rounded-3xl shadow-sm flex flex-col ${
-                    isAi 
-                      ? 'bg-white border border-stone-100 text-stone-800 rounded-bl-sm' 
-                      : 'bg-stone-900 text-white rounded-br-sm'
-                  }`}>
-                    {/* Render User Uploaded Image if it exists */}
+                  {/* Message Content */}
+                  <div className="flex-1 space-y-2 min-w-0">
+                    <div className="font-medium text-sm text-stone-900 tracking-wide">
+                      {isAi ? 'Kapi' : 'You'}
+                    </div>
+                    
                     {msg.image && (
-                      <div className="relative w-48 h-48 mb-3 rounded-xl overflow-hidden border border-white/20">
+                      <div className="relative w-48 h-48 sm:w-64 sm:h-64 mb-4 rounded-2xl overflow-hidden border border-stone-200 shadow-sm">
                         <Image src={msg.image} alt="Uploaded reference" fill className="object-cover" />
                       </div>
                     )}
                     
-                    <p className="text-[15px] leading-relaxed font-light whitespace-pre-wrap">
+                    <p className="text-[15px] sm:text-base text-stone-700 leading-relaxed font-light whitespace-pre-wrap">
                       {msg.text}
                     </p>
                   </div>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
+
+          {/* Typing Indicator */}
+          {isTyping && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="w-full flex gap-4">
+              <div className="shrink-0 pt-1">
+                <KapiAvatar isTyping={true} className="w-8 h-8 sm:w-10 sm:h-10" />
+              </div>
+              <div className="flex-1 space-y-2">
+                <div className="font-medium text-sm text-stone-900 tracking-wide">Kapi</div>
+                <div className="flex items-center space-x-1.5 h-6">
+                  <motion.div animate={{ y: [0, -4, 0] }} transition={{ repeat: Infinity, duration: 0.8, ease: "easeInOut" }} className="w-1.5 h-1.5 bg-emerald-400 rounded-full" />
+                  <motion.div animate={{ y: [0, -4, 0] }} transition={{ repeat: Infinity, duration: 0.8, delay: 0.15, ease: "easeInOut" }} className="w-1.5 h-1.5 bg-emerald-400 rounded-full" />
+                  <motion.div animate={{ y: [0, -4, 0] }} transition={{ repeat: Infinity, duration: 0.8, delay: 0.3, ease: "easeInOut" }} className="w-1.5 h-1.5 bg-emerald-400 rounded-full" />
                 </div>
-              </motion.div>
-            );
-          })}
-        </AnimatePresence>
-
-        {isTyping && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start w-full">
-            <div className="flex flex-row max-w-[85%]">
-              <div className="shrink-0 flex items-center justify-center h-10 w-10 rounded-full bg-emerald-100 border border-emerald-200 mr-4 mt-auto mb-2">
-                <Sparkles size={18} className="text-emerald-700" />
-              </div>
-              <div className="bg-white border border-stone-100 p-5 rounded-3xl rounded-bl-sm shadow-sm flex items-center justify-center space-x-1">
-                <motion.div animate={{ y: [0, -5, 0] }} transition={{ repeat: Infinity, duration: 0.6 }} className="w-2 h-2 bg-emerald-300 rounded-full" />
-                <motion.div animate={{ y: [0, -5, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.2 }} className="w-2 h-2 bg-emerald-300 rounded-full" />
-                <motion.div animate={{ y: [0, -5, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.4 }} className="w-2 h-2 bg-emerald-300 rounded-full" />
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        <div ref={messagesEndRef} /> 
-      </div>
-
-      {/* --- FLOATING INPUT AREA --- */}
-      <div className="absolute bottom-6 left-0 w-full px-4 lg:px-8 pointer-events-none flex flex-col items-center">
-        
-        {/* Image Preview Thumbnail (Appears when file is selected) */}
-        <AnimatePresence>
-          {selectedImage && (
-            <motion.div 
-              initial={{ opacity: 0, y: 20, scale: 0.9 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9, y: 10 }}
-              className="pointer-events-auto mb-4 relative bg-white p-2 rounded-2xl shadow-xl border border-stone-200 self-start ml-4"
-            >
-              <button 
-                onClick={() => { setSelectedImage(null); setMimeType(null); }}
-                className="absolute -top-2 -right-2 bg-stone-800 text-white p-1 rounded-full hover:scale-110 transition-transform z-10"
-              >
-                <X size={14} />
-              </button>
-              <div className="relative w-20 h-20 rounded-xl overflow-hidden">
-                <Image src={selectedImage} alt="Preview" fill className="object-cover" />
               </div>
             </motion.div>
           )}
-        </AnimatePresence>
 
-        <form 
-          onSubmit={handleSend}
-          className="pointer-events-auto w-full bg-white/80 backdrop-blur-2xl border border-white shadow-[0_8px_30px_rgb(0,0,0,0.08)] p-2 rounded-[2.5rem] flex items-center relative overflow-hidden"
-        >
-          {/* Hidden File Input */}
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            onChange={handleFileChange} 
-            accept="image/*" 
-            className="hidden" 
-          />
-          
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="h-12 w-12 rounded-full flex items-center justify-center text-stone-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors ml-1 shrink-0"
-          >
-            <Paperclip size={22} />
-          </button>
+          <div ref={messagesEndRef} className="h-4" /> 
+        </div>
+      </div>
 
-          <input
-            type="text"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Ask Kapi or upload an image..."
-            className="flex-1 bg-transparent text-stone-800 px-4 py-3 focus:outline-none placeholder:text-stone-400 text-[15px]"
-            autoComplete="off"
-          />
+      {/* --- FLOATING COMMAND CENTER INPUT --- */}
+      <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-[#FDFCF8] via-[#FDFCF8]/95 to-transparent pt-12 pb-6 px-4 sm:px-8 pointer-events-none flex flex-col items-center z-20">
+        
+        <div className="w-full max-w-3xl pointer-events-auto relative">
           
-          <button
-            type="submit"
-            disabled={(!inputValue.trim() && !selectedImage) || isTyping}
-            className={`h-12 w-12 rounded-full flex items-center justify-center transition-all shrink-0 ${
-              (inputValue.trim() || selectedImage) && !isTyping 
-                ? 'bg-emerald-600 text-white shadow-md hover:scale-105 hover:bg-emerald-700' 
-                : 'bg-stone-100 text-stone-400 cursor-not-allowed'
-            }`}
+          {/* Image Preview Thumbnail */}
+          <AnimatePresence>
+            {selectedImage && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                className="absolute bottom-full mb-4 left-0 bg-white p-2 rounded-2xl shadow-xl border border-stone-200 z-30"
+              >
+                <button 
+                  onClick={() => { setSelectedImage(null); setMimeType(null); }}
+                  className="absolute -top-2 -right-2 bg-stone-900 text-white p-1 rounded-full hover:scale-110 transition-transform shadow-md"
+                >
+                  <X size={14} />
+                </button>
+                <div className="relative w-20 h-20 rounded-xl overflow-hidden">
+                  <Image src={selectedImage} alt="Preview" fill className="object-cover" />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <form 
+            onSubmit={handleSend}
+            className="w-full bg-white border border-stone-200 shadow-[0_4px_30px_rgb(0,0,0,0.06)] rounded-2xl sm:rounded-3xl p-1.5 sm:p-2 flex items-center transition-shadow focus-within:ring-2 focus-within:ring-emerald-500/20"
           >
-            <Send size={20} className={(inputValue.trim() || selectedImage) && !isTyping ? "translate-x-0.5 -translate-y-0.5" : ""} />
-          </button>
-        </form>
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              onChange={handleFileChange} 
+              accept="image/*" 
+              className="hidden" 
+            />
+            
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl text-stone-400 hover:text-stone-700 hover:bg-stone-50 transition-colors shrink-0"
+            >
+              <Paperclip size={20} />
+            </button>
+
+            <input
+              type="text"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder="Message Kapi..."
+              className="flex-1 bg-transparent text-stone-800 px-3 sm:px-4 py-2 sm:py-3 focus:outline-none placeholder:text-stone-400 text-[15px] sm:text-base"
+              autoComplete="off"
+            />
+            
+            <button
+              type="submit"
+              disabled={!canSend}
+              className={`p-2.5 sm:p-3 rounded-xl sm:rounded-2xl shrink-0 transition-all ${
+                canSend 
+                  ? 'bg-stone-900 text-white shadow-md hover:bg-stone-800' 
+                  : 'bg-stone-50 text-stone-300 cursor-not-allowed'
+              }`}
+            >
+              <Send size={18} className={canSend ? "translate-x-0.5 -translate-y-0.5" : ""} />
+            </button>
+          </form>
+          
+          <div className="text-center mt-3 mb-1 sm:mb-0">
+            <span className="text-[10px] sm:text-[11px] text-stone-400 font-medium tracking-wide uppercase">
+              Kapi can make mistakes. Verify important information.
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   );
