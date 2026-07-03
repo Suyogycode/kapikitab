@@ -3,10 +3,22 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, ArrowLeft, Check, Sparkles } from 'lucide-react';
-import { useRouter } from 'next/navigation'; // Next.js Native Router
+import { useRouter } from 'next/navigation';
+
+// --- TYPESCRIPT BLUEPRINTS ---
+type Option = {
+  id: string;
+  label: string;
+  desc?: string; // The '?' tells TypeScript this is optional!
+};
+
+type Step = {
+  id: string;
+  question: string;
+  options: Option[];
+};
 
 // --- MASCOT SVG COMPONENT ---
-// Keeps Kapi floating and blinking smoothly in the browser
 const CuteMascot = ({ isTalking }: { isTalking: boolean }) => (
   <motion.svg 
     viewBox="0 0 200 200" 
@@ -41,7 +53,7 @@ const CuteMascot = ({ isTalking }: { isTalking: boolean }) => (
 );
 
 // --- LEVEL OPTIONS DICTIONARY ---
-const LEVEL_OPTIONS: Record<string, { id: string; label: string; desc: string }[]> = {
+const LEVEL_OPTIONS: Record<string, Option[]> = {
   Math: [
     { id: 'beginner', label: 'Basic Algebra', desc: 'Solving for x without crying.' },
     { id: 'intermediate', label: 'Quadratic Equations', desc: 'Parabolas are my playground.' },
@@ -108,14 +120,14 @@ const HUMOR_LINES: Record<string, Record<string, string>> = {
 };
 
 export default function SetProfile() {
-  const router = useRouter(); // Next.js router engine
+  const router = useRouter(); 
   const [currentStep, setCurrentStep] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [answers, setAnswers] = useState<Record<string, string | string[]>>({});  
   const [mascotText, setMascotText] = useState("Hello! I'm Kapi. Let's build a universe perfectly tailored to your brain. Shall we begin?");
   const [isTalking, setIsTalking] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  const steps = [
+  const steps: Step[] = [
     {
       id: 'grade',
       question: "First things first, where are you currently in your academic journey?",
@@ -139,7 +151,7 @@ export default function SetProfile() {
     {
       id: 'level',
       question: "Based on your subject, where do you currently stand?",
-      options: [] as { id: string; label: string; desc: string }[]
+      options: []
     },
     {
       id: 'reason',
@@ -157,7 +169,7 @@ export default function SetProfile() {
       options: [
         { id: '15 mins', label: '15 Minutes', desc: 'A quick, powerful daily sprint.' },
         { id: '25 mins', label: '25 Minutes', desc: 'A solid block of focused learning.' },
-        { id: '30+ mins', line: '30+ Minutes', label: '30+ Minutes', desc: 'Deep diving into complex simulations.' }
+        { id: '30+ mins', label: '30+ Minutes', desc: 'Deep diving into complex simulations.' }
       ]
     },
     {
@@ -172,31 +184,25 @@ export default function SetProfile() {
     }
   ];
 
-  // Dynamically pull subsets for Step 3 based on Step 2 selection
   if (currentStep === 2) {
     const chosenSubject = (answers.subject?.[0] as string) || 'Math';
-    steps[2].options = LEVEL_OPTIONS[chosenSubject];
+    steps[2].options = LEVEL_OPTIONS[chosenSubject] || [];
   }
 
   const handleSelect = (optionId: string) => {
     const stepId = steps[currentStep].id;
     
-    // Multi-select logic for the "subject" step
     if (stepId === 'subject') {
       const currentSubjects = (answers.subject as string[]) || [];
       if (currentSubjects.includes(optionId)) {
-        // Remove it if it's already selected
         setAnswers({ ...answers, subject: currentSubjects.filter(id => id !== optionId) });
       } else {
-        // Add it to the array
         setAnswers({ ...answers, subject: [...currentSubjects, optionId] });
       }
     } else {
-      // Single-select logic for all other steps
       setAnswers({ ...answers, [stepId]: optionId });
     }
     
-    // Trigger Mascot Humor (using the clicked option)
     const line = HUMOR_LINES[stepId]?.[optionId];
     if (line) {
       setMascotText(line);
@@ -205,7 +211,7 @@ export default function SetProfile() {
     }
   };
 
-const handleNext = async () => {
+  const handleNext = async () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
       setMascotText("Take your time. I'm processing...");
@@ -215,7 +221,6 @@ const handleNext = async () => {
       setIsSaving(true);
       
       try {
-        // Send the completed answers to our new API route
         const res = await fetch('/api/user/profile', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -310,10 +315,11 @@ const handleNext = async () => {
 
             <div className="space-y-4">
             {currentData.options.map((option) => {
-            // Check if the current answer is an array (multi-select) or a string (single-select)
             const isSelected = Array.isArray(answers[currentData.id]) 
                 ? (answers[currentData.id] as string[]).includes(option.id)
-                : answers[currentData.id] === option.id;                return (
+                : answers[currentData.id] === option.id;                
+                
+                return (
                   <motion.button
                     key={option.id}
                     whileHover={{ scale: 1.01 }}
