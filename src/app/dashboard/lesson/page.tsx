@@ -20,17 +20,14 @@ const FloatingAmbientBackground = ({ icons, color }: { icons: any[], color: stri
   const [particles, setParticles] = useState<any[]>([]);
 
   useEffect(() => {
-    // 1. ADDED MORE: Increased particle count from 15 to 35
-    const generated = Array.from({ length: 15 }).map((_, i) => ({
+    const generated = Array.from({ length: 35 }).map((_, i) => ({
       id: i,
       Icon: icons[Math.floor(Math.random() * icons.length)],
-      // 2. MADE BIGGER: Size is now randomly between 40px and 100px (was 16-40)
-      size: Math.random() * (60 - 16) + 16, 
+      size: Math.random() * (100 - 40) + 40, 
       left: `${Math.random() * 100}vw`,
       top: `${Math.random() * 100}vh`,
-      // 3. SLOWED DOWN: Float cycle takes 40 to 80 seconds (was 15-25s)
       duration: Math.random() * (80 - 40) + 40, 
-      delay: Math.random() * -10, 
+      delay: Math.random() * -60, 
     }));
     setParticles(generated);
     setMounted(true);
@@ -43,14 +40,11 @@ const FloatingAmbientBackground = ({ icons, color }: { icons: any[], color: stri
       {particles.map((p) => (
         <motion.div
           key={p.id}
-          // 4. MADE VISIBLE: Bumped opacity from 0.07 to 0.15 (15%)
           className={`absolute ${color} opacity-[0.15]`}
           style={{ left: p.left, top: p.top }}
           animate={{
-            // Increased the distance they drift up/down and left/right
             y: [0, -50, 50, 0],
             x: [0, 40, -40, 0],
-            // Added a slightly wider rotation to make the motion more obvious
             rotate: [0, 90, -90, 0], 
           }}
           transition={{
@@ -60,7 +54,6 @@ const FloatingAmbientBackground = ({ icons, color }: { icons: any[], color: stri
             delay: p.delay,
           }}
         >
-          {/* Thickened the stroke slightly so the larger icons don't look overly thin */}
           <p.Icon size={p.size} strokeWidth={1.5} />
         </motion.div>
       ))}
@@ -73,7 +66,7 @@ const FloatingAmbientBackground = ({ icons, color }: { icons: any[], color: stri
 // ============================================================================
 const subjectThemes: Record<string, any> = {
   math: {
-    background: 'bg-[#F9F8F4]', 
+    background: 'bg-[#EBE8DD]', // Deepened to Warm Oat
     text: 'text-[#3E423A]',
     accent: 'bg-[#4A5D4E]', 
     pathColor: 'border-[#4A5D4E]/30',
@@ -91,7 +84,7 @@ const subjectThemes: Record<string, any> = {
     ]
   },
   physics: {
-    background: 'bg-[#F4F5F7]', 
+    background: 'bg-[#E2E6EB]', // Deepened to Steel Frost
     text: 'text-[#2C3137]',
     accent: 'bg-[#5C6B89]', 
     pathColor: 'border-[#5C6B89]/30',
@@ -106,7 +99,7 @@ const subjectThemes: Record<string, any> = {
     ]
   },
   chemistry: {
-    background: 'bg-[#F2F6F5]', 
+    background: 'bg-[#E1EBE7]', // Deepened to Soft Eucalyptus 
     text: 'text-[#2A3A35]',
     accent: 'bg-[#52796F]',
     pathColor: 'border-[#52796F]/30',
@@ -121,7 +114,7 @@ const subjectThemes: Record<string, any> = {
     ]
   },
   biology: {
-    background: 'bg-[#F7F6F1]', 
+    background: 'bg-[#E8E4D5]', // Deepened to Dried Reed
     text: 'text-[#423D33]',
     accent: 'bg-[#8A795D]',
     pathColor: 'border-[#8A795D]/30',
@@ -136,7 +129,7 @@ const subjectThemes: Record<string, any> = {
     ]
   },
   computer: {
-    background: 'bg-[#F3F4F6]',
+    background: 'bg-[#E3E5E9]', // Deepened to Tech Ash
     text: 'text-[#1F2937]',
     accent: 'bg-[#4B5563]',
     pathColor: 'border-[#4B5563]/30',
