@@ -23,11 +23,11 @@ const FloatingAmbientBackground = ({ icons, color }: { icons: any[], color: stri
     const generated = Array.from({ length: 35 }).map((_, i) => ({
       id: i,
       Icon: icons[Math.floor(Math.random() * icons.length)],
-      size: Math.random() * (100 - 40) + 40, 
+      size: Math.random() * (60 - 16) + 16, 
       left: `${Math.random() * 100}vw`,
       top: `${Math.random() * 100}vh`,
       duration: Math.random() * (80 - 40) + 40, 
-      delay: Math.random() * -60, 
+      delay: Math.random() * -10, 
     }));
     setParticles(generated);
     setMounted(true);
