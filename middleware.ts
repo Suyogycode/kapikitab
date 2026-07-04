@@ -8,11 +8,16 @@ export async function middleware(req: NextRequest) {
   const isAuth = !!token;
   
   // 2. Identify the type of page they are trying to visit
-  const isAuthPage = req.nextUrl.pathname.startsWith('/signup') || req.nextUrl.pathname.startsWith('/set-profile');
-  const isProtectedRoute = req.nextUrl.pathname.startsWith('/dashboard') || req.nextUrl.pathname.startsWith('/admin');
+  // We removed /set-profile from here!
+  const isSignupPage = req.nextUrl.pathname.startsWith('/signup');
+  
+  // We added /set-profile here so it requires authentication!
+  const isProtectedRoute = req.nextUrl.pathname.startsWith('/dashboard') || 
+                         req.nextUrl.pathname.startsWith('/admin') || 
+                         req.nextUrl.pathname.startsWith('/set-profile');
 
-  // 3. Logic: If they are logged in and trying to go to Signup/Profile, redirect to Dashboard
-  if (isAuthPage) {
+  // 3. Logic: If they are logged in and trying to go to Signup, redirect to Dashboard
+  if (isSignupPage) {
     if (isAuth) {
       return NextResponse.redirect(new URL('/dashboard', req.url));
     }
