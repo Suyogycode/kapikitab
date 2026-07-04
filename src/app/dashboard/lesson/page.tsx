@@ -1,149 +1,238 @@
 "use client";
 
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Play, Check, Lock, Beaker } from 'lucide-react';
+import { 
+  Check, Lock, Play, Compass, Orbit, FlaskConical, Dna, Terminal, 
+  Sigma, FunctionSquare, Triangle, Brackets, Calculator, Atom, Magnet, 
+  Zap, Microscope, Leaf, Bug, Code, Cpu, Database, 
+  Plus, Divide, Infinity as InfinityIcon, Pi, 
+  Waves, Telescope, Hexagon, Droplets, Sprout, Hash, Braces, Beaker
+} from 'lucide-react';
 import Link from 'next/link';
 import { DashboardContext } from '../layout';
-import Image from 'next/image';
-import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
-// --- THE EXPANDED CONCEPT GRAPH ---
-const nodes = [
-  { id: 'foundations', title: "Number Systems", x: 50, y: 53, status: 'completed', prereqs: [] }, 
-  { id: 'algebra', title: "Polynomials", x: 33, y: 71, status: 'completed', prereqs: ['foundations'] },
-  { id: 'geometry', title: "Coordinate Geometry", x: 18, y: 59, status: 'active', prereqs: ['algebra'] },
-  { id: 'linear', title: "Linear Equations", x: 19, y: 35, status: 'locked', prereqs: ['geometry'] }, 
-  { id: 'triangles', title: "Triangles", x: 37, y: 22, status: 'locked', prereqs: ['linear'] }, 
-  { id: 'trig', title: "Trigonometry", x: 67, y: 23, status: 'locked', prereqs: ['foundations'] }, 
-  { id: 'complex', title: "Complex Numbers", x: 82, y: 36, status: 'locked', prereqs: ['trig'] }, 
-  { id: 'calculus', title: "Calculus Peaks", x: 65, y: 70, status: 'locked', prereqs: ['complex', 'algebra'] },
-];
+// ============================================================================
+// AMBIENT BACKGROUND COMPONENT
+// ============================================================================
+const FloatingAmbientBackground = ({ icons, color }: { icons: any[], color: string }) => {
+  const [mounted, setMounted] = useState(false);
+  const [particles, setParticles] = useState<any[]>([]);
 
-export default function LessonPage() {
-  const { activeSubject } = useContext(DashboardContext);
-  const [isLoaded, setIsLoaded] = useState(false);
+  useEffect(() => {
+    // 1. ADDED MORE: Increased particle count from 15 to 35
+    const generated = Array.from({ length: 15 }).map((_, i) => ({
+      id: i,
+      Icon: icons[Math.floor(Math.random() * icons.length)],
+      // 2. MADE BIGGER: Size is now randomly between 40px and 100px (was 16-40)
+      size: Math.random() * (60 - 16) + 16, 
+      left: `${Math.random() * 100}vw`,
+      top: `${Math.random() * 100}vh`,
+      // 3. SLOWED DOWN: Float cycle takes 40 to 80 seconds (was 15-25s)
+      duration: Math.random() * (80 - 40) + 40, 
+      delay: Math.random() * -10, 
+    }));
+    setParticles(generated);
+    setMounted(true);
+  }, [icons]);
 
-  useEffect(() => { setIsLoaded(true); }, []);
-
-  if (activeSubject !== 'math') {
-    return (
-      <div className="h-full w-full flex flex-col items-center justify-center animate-in fade-in duration-500">
-        <div className="h-20 w-20 bg-stone-100 rounded-full flex items-center justify-center mb-6 border-2 border-stone-200 border-dashed">
-          <Beaker size={32} className="text-stone-400" />
-        </div>
-        <h2 className="text-3xl font-serif text-stone-800 mb-2">Subject Syncing...</h2>
-        <p className="text-stone-500 text-lg">We are currently perfecting the Mathematics vertical.</p>
-      </div>
-    );
-  }
+  if (!mounted) return null;
 
   return (
-    // FULLSCREEN BACKGROUND OVERLAY
-    <div className="fixed inset-0 w-screen h-screen z-0 bg-[#b6c7a4] overflow-hidden">
-      
-      <div className={`transition-opacity duration-1000 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
-        <TransformWrapper
-          initialScale={1}
-          initialPositionX={-400} // Centers the map roughly on load
-          initialPositionY={-200}
-          minScale={0.6} // Prevents zooming out so far that the background shows
-          maxScale={2.5} // Prevents zooming in so far it gets blurry
-          limitToBounds={true} // Creates the "wall" collision so you can't drag off-screen
-          centerZoomedOut={true}
-          wheel={{ step: 0.1 }} // Smooth mouse wheel zooming
-          doubleClick={{ step: 0.5 }} // Zooms exactly where the mouse pointer is!
+    <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+      {particles.map((p) => (
+        <motion.div
+          key={p.id}
+          // 4. MADE VISIBLE: Bumped opacity from 0.07 to 0.15 (15%)
+          className={`absolute ${color} opacity-[0.15]`}
+          style={{ left: p.left, top: p.top }}
+          animate={{
+            // Increased the distance they drift up/down and left/right
+            y: [0, -50, 50, 0],
+            x: [0, 40, -40, 0],
+            // Added a slightly wider rotation to make the motion more obvious
+            rotate: [0, 90, -90, 0], 
+          }}
+          transition={{
+            duration: p.duration,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: p.delay,
+          }}
         >
-          <TransformComponent wrapperStyle={{ width: "100vw", height: "100vh" }}>
-            
-            {/* THE MASSIVE GAME WORLD (2500x1600) */}
-            <div className="relative" style={{ width: '2500px', height: '1600px' }}>
+          {/* Thickened the stroke slightly so the larger icons don't look overly thin */}
+          <p.Icon size={p.size} strokeWidth={1.5} />
+        </motion.div>
+      ))}
+    </div>
+  );
+};
+
+// ============================================================================
+// SUBJECT-SPECIFIC THEME & DATA DICTIONARY
+// ============================================================================
+const subjectThemes: Record<string, any> = {
+  math: {
+    background: 'bg-[#F9F8F4]', 
+    text: 'text-[#3E423A]',
+    accent: 'bg-[#4A5D4E]', 
+    pathColor: 'border-[#4A5D4E]/30',
+    watermark: <Sigma className="w-[120vw] h-[120vh] text-[#4A5D4E]/5 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -z-10" />,
+    floatingIcons: [Plus, Divide, InfinityIcon, Pi, Triangle, Brackets],
+    nodes: [
+      { id: 'foundations', title: "Number Systems", status: 'completed', CustomIcon: Calculator }, 
+      { id: 'algebra', title: "Polynomials", status: 'completed', CustomIcon: FunctionSquare },
+      { id: 'geometry', title: "Coordinate Geometry", status: 'active', CustomIcon: Triangle },
+      { id: 'linear', title: "Linear Equations", status: 'locked', CustomIcon: Brackets }, 
+      { id: 'triangles', title: "Triangles", status: 'locked', CustomIcon: Compass }, 
+      { id: 'trig', title: "Trigonometry", status: 'locked', CustomIcon: Calculator }, 
+      { id: 'complex', title: "Complex Numbers", status: 'locked', CustomIcon: FunctionSquare }, 
+      { id: 'calculus', title: "Calculus Peaks", status: 'locked', CustomIcon: Sigma },
+    ]
+  },
+  physics: {
+    background: 'bg-[#F4F5F7]', 
+    text: 'text-[#2C3137]',
+    accent: 'bg-[#5C6B89]', 
+    pathColor: 'border-[#5C6B89]/30',
+    watermark: <Orbit className="w-[120vw] h-[120vh] text-[#5C6B89]/5 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -z-10" />,
+    floatingIcons: [Waves, Telescope, Zap, Magnet, Atom],
+    nodes: [
+      { id: 'kin', title: "Kinematics", status: 'completed', CustomIcon: Orbit }, 
+      { id: 'dyn', title: "Dynamics", status: 'active', CustomIcon: Atom },
+      { id: 'em', title: "Electromagnetism", status: 'locked', CustomIcon: Magnet },
+      { id: 'thermo', title: "Thermodynamics", status: 'locked', CustomIcon: Zap }, 
+      { id: 'quantum', title: "Quantum", status: 'locked', CustomIcon: Orbit }, 
+    ]
+  },
+  chemistry: {
+    background: 'bg-[#F2F6F5]', 
+    text: 'text-[#2A3A35]',
+    accent: 'bg-[#52796F]',
+    pathColor: 'border-[#52796F]/30',
+    watermark: <FlaskConical className="w-[120vw] h-[120vh] text-[#52796F]/5 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -z-10" />,
+    floatingIcons: [Hexagon, Droplets, FlaskConical, Atom, Beaker],
+    nodes: [
+      { id: 'atm', title: "Atomic Structure", status: 'completed', CustomIcon: Atom }, 
+      { id: 'bond', title: "Bonding", status: 'active', CustomIcon: FlaskConical },
+      { id: 'org', title: "Organic Chem", status: 'locked', CustomIcon: Hexagon },
+      { id: 'kinet', title: "Kinetics", status: 'locked', CustomIcon: Zap }, 
+      { id: 'eq', title: "Equilibrium", status: 'locked', CustomIcon: Droplets }, 
+    ]
+  },
+  biology: {
+    background: 'bg-[#F7F6F1]', 
+    text: 'text-[#423D33]',
+    accent: 'bg-[#8A795D]',
+    pathColor: 'border-[#8A795D]/30',
+    watermark: <Dna className="w-[120vw] h-[120vh] text-[#8A795D]/5 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -z-10" />,
+    floatingIcons: [Sprout, Leaf, Bug, Dna, Microscope],
+    nodes: [
+      { id: 'cell', title: "Cell Biology", status: 'completed', CustomIcon: Microscope }, 
+      { id: 'gen', title: "Genetics", status: 'active', CustomIcon: Dna },
+      { id: 'evo', title: "Evolution", status: 'locked', CustomIcon: Leaf },
+      { id: 'eco', title: "Ecology", status: 'locked', CustomIcon: Bug }, 
+      { id: 'physio', title: "Physiology", status: 'locked', CustomIcon: Microscope }, 
+    ]
+  },
+  computer: {
+    background: 'bg-[#F3F4F6]',
+    text: 'text-[#1F2937]',
+    accent: 'bg-[#4B5563]',
+    pathColor: 'border-[#4B5563]/30',
+    watermark: <Terminal className="w-[120vw] h-[120vh] text-[#4B5563]/5 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -z-10" />,
+    floatingIcons: [Code, Hash, Braces, Cpu, Database],
+    nodes: [
+      { id: 'intro', title: "Intro to Logic", status: 'completed', CustomIcon: Terminal }, 
+      { id: 'ds', title: "Data Structures", status: 'active', CustomIcon: Database },
+      { id: 'algo', title: "Algorithms", status: 'locked', CustomIcon: Code },
+      { id: 'arch', title: "Architecture", status: 'locked', CustomIcon: Cpu }, 
+      { id: 'os', title: "Operating Systems", status: 'locked', CustomIcon: Terminal }, 
+    ]
+  }
+};
+
+// ============================================================================
+// MASTER COMPONENT
+// ============================================================================
+export default function LessonPage() {
+  const { activeSubject } = useContext(DashboardContext);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  
+  const theme = subjectThemes[activeSubject] || subjectThemes['math'];
+
+  useEffect(() => {
+    if (window.innerWidth < 1024 && scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+    }
+  }, [activeSubject]);
+
+  return (
+    <div className={`fixed inset-0 w-screen h-screen ${theme.background} overflow-hidden transition-colors duration-500`}>
+      
+      {/* 1. Static Massive Watermark */}
+      <div className="pointer-events-none z-0">
+        {theme.watermark}
+      </div>
+
+      {/* 2. Floating Ambient Particles */}
+      <FloatingAmbientBackground icons={theme.floatingIcons} color={theme.text} />
+
+      {/* 3. The Interactive Map Canvas */}
+      <div 
+        ref={scrollContainerRef}
+        className="w-full h-full flex flex-col-reverse lg:flex-row items-center justify-start pt-32 pb-48 lg:pt-0 lg:px-48 gap-16 lg:gap-32 overflow-y-auto lg:overflow-x-auto lg:overflow-y-hidden no-scrollbar relative z-10"
+      >
+        
+        {/* The connecting central line */}
+        <div className={`absolute top-0 bottom-0 left-1/2 w-0.5 border-l-2 border-dashed ${theme.pathColor} lg:w-full lg:h-0.5 lg:border-t-2 lg:border-l-0 lg:top-1/2 lg:left-0 lg:bottom-auto -z-10`} />
+
+        {/* Render Chapters */}
+        {theme.nodes.map((node: any, index: number) => {
+          
+          const isEven = index % 2 === 0;
+          const zigZagClass = isEven 
+            ? "translate-x-12 lg:translate-x-0 lg:-translate-y-24" 
+            : "-translate-x-12 lg:translate-x-0 lg:translate-y-24";
+
+          return (
+            <div key={node.id} className={`relative flex flex-col items-center justify-center shrink-0 group ${zigZagClass}`}>
               
-              {/* LAYER 1: THE TERRAIN */}
-              <div className="absolute inset-0 z-0 pointer-events-none">
-                <Image 
-                  src="/village-map.png" 
-                  alt="Learning Village Map" 
-                  fill 
-                  className="object-cover"
-                  priority
-                />
+              {/* Tooltip */}
+              <div className="absolute lg:-top-16 -top-12 bg-white/95 backdrop-blur-md px-4 py-2 rounded-xl shadow-md border border-stone-100 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-30 transform -translate-y-2 group-hover:translate-y-0">
+                <span className={`font-serif font-medium text-lg ${theme.text}`}>{node.title}</span>
               </div>
 
-              {/* LAYER 2: THE GLOWING PATHS */}
-              <svg className="absolute inset-0 w-full h-full pointer-events-none z-10">
-                {nodes.map((node) => {
-                  return node.prereqs.map((prereqId) => {
-                    const parent = nodes.find(n => n.id === prereqId);
-                    if (!parent) return null;
-                    
-                    const isPathActive = node.status === 'active' || node.status === 'completed';
-                    
-                    return (
-                      <line 
-                        key={`${parent.id}-${node.id}`} 
-                        x1={`${parent.x}%`} y1={`${parent.y}%`} 
-                        x2={`${node.x}%`} y2={`${node.y}%`} 
-                        stroke={isPathActive ? "rgba(252, 211, 77, 0.8)" : "rgba(255, 255, 255, 0.4)"} 
-                        strokeWidth="8" 
-                        strokeDasharray={isPathActive ? "none" : "15 15"} 
-                        strokeLinecap="round" 
-                      />
-                    );
-                  });
-                })}
-              </svg>
-
-              {/* LAYER 3: THE BUILDINGS */}
-              {nodes.map((node) => (
-                <div 
-                  key={node.id} 
-                  className="absolute z-20 flex flex-col items-center justify-center group" 
-                  style={{ left: `${node.x}%`, top: `${node.y}%`, transform: 'translate(-50%, -50%)' }}
+              <Link href={node.status === 'locked' ? '#' : `/learning/${node.id}`}>
+                <motion.button 
+                  whileHover={node.status !== 'locked' ? { scale: 1.05 } : {}}
+                  whileTap={node.status !== 'locked' ? { scale: 0.95 } : {}}
+                  className={`relative flex items-center justify-center w-24 h-24 lg:w-32 lg:h-32 rounded-3xl bg-white shadow-xl border border-stone-100 transition-all duration-300 ${
+                    node.status === 'locked' ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer'
+                  }`}
                 >
-                  <div className="absolute -top-16 bg-white/95 backdrop-blur-sm px-5 py-2.5 rounded-xl shadow-lg border border-stone-200 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-30 transform -translate-y-2 group-hover:translate-y-0">
-                    <span className="font-serif font-medium text-xl text-stone-800">{node.title}</span>
+                  <node.CustomIcon className={`w-10 h-10 lg:w-14 lg:h-14 ${node.status === 'locked' ? 'text-stone-300' : theme.text}`} strokeWidth={1.5} />
+
+                  {/* Status Badges */}
+                  <div className={`absolute -bottom-3 -right-3 h-10 w-10 rounded-full border-4 border-white flex items-center justify-center shadow-lg z-30 ${
+                    node.status === 'active' ? theme.accent : 
+                    node.status === 'completed' ? 'bg-stone-300' : 
+                    'bg-stone-200'
+                  }`}>
+                    {node.status === 'completed' && <Check className="text-white" size={18} strokeWidth={3} />}
+                    {node.status === 'active' && <Play className="text-white ml-0.5" size={18} fill="currentColor" />}
+                    {node.status === 'locked' && <Lock className="text-stone-400" size={16} />}
                   </div>
 
-                  <Link href={node.status === 'locked' ? '#' : `/learning/${node.id}`}>
-                    <motion.button 
-                      whileHover={node.status !== 'locked' ? { scale: 1.05, y: -5 } : {}}
-                      whileTap={node.status !== 'locked' ? { scale: 0.95 } : {}}
-                      className={`relative flex items-center justify-center transition-all duration-300 ${
-                        node.status === 'locked' ? 'cursor-not-allowed opacity-60 grayscale' : 'cursor-pointer'
-                      }`}
-                    >
-                      {node.id !== 'foundations' && (
-                        <Image 
-                          src="/observatory.png" 
-                          alt={node.title} 
-                          width={240} // Scaled up to match the massive 2500px map
-                          height={240} 
-                          className="drop-shadow-2xl"
-                        />
-                      )}
-
-                      <div className={`absolute -bottom-4 right-8 h-12 w-12 rounded-full border-4 border-white flex items-center justify-center shadow-xl z-30 ${
-                        node.status === 'active' ? 'bg-amber-500 animate-bounce' : 
-                        node.status === 'completed' ? 'bg-emerald-500' : 
-                        'bg-stone-400'
-                      }`}>
-                        {node.status === 'completed' && <Check className="text-white" size={24} strokeWidth={3} />}
-                        {node.status === 'active' && <Play className="text-white ml-1" size={24} fill="currentColor" />}
-                        {node.status === 'locked' && <Lock className="text-white" size={20} />}
-                      </div>
-
-                      {node.status === 'active' && (
-                        <div className="absolute inset-0 -m-4 rounded-full border-4 border-amber-400/40 scale-125 animate-ping z-0" style={{ animationDuration: '3s' }} />
-                      )}
-                    </motion.button>
-                  </Link>
-                </div>
-              ))}
+                  {/* Gentle ping animation for active node */}
+                  {node.status === 'active' && (
+                    <div className={`absolute inset-0 -m-2 rounded-3xl border-2 ${theme.pathColor} scale-110 animate-ping z-0`} style={{ animationDuration: '3s' }} />
+                  )}
+                </motion.button>
+              </Link>
             </div>
-
-          </TransformComponent>
-        </TransformWrapper>
+          );
+        })}
       </div>
     </div>
   );
