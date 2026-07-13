@@ -65,7 +65,7 @@ export default function Home() {
             Visualise your <br className="hidden md:block"/> Concepts.
           </h1>
           <p className="text-xl md:text-2xl text-stone-500 font-light max-w-2xl mx-auto mb-12">
-            Excel in your studies. Concept Videos, Practice and Quiz, <br/> AI Study Tools, Graphics, AR.
+            Excel in your studies with concept videos, practice quizzes, AI study tools, and interactive AR graphics.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link href={status === "authenticated" ? "/dashboard" : "/signup"}>
