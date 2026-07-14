@@ -7,13 +7,10 @@ import bcrypt from "bcryptjs";
 
 const handler = NextAuth({
   providers: [
-    // 1. GOOGLE AUTHENTICATION
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID as string,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
     }),
-    
-    // 2. EMAIL / PASSWORD AUTHENTICATION
     CredentialsProvider({
       name: "Credentials",
       credentials: {
@@ -28,7 +25,6 @@ const handler = NextAuth({
         await connectToDatabase();
         const user = await User.findOne({ email: credentials.email });
 
-        // If user doesn't exist or signed up with Google previously (no password)
         if (!user || !user.password) {
           throw new Error("Invalid credentials");
         }
@@ -43,20 +39,17 @@ const handler = NextAuth({
     })
   ],
   callbacks: {
-    // 3. THIS RUNS EVERY TIME A USER LOGS IN
     async signIn({ user, account }) {
       if (account?.provider === "google") {
         await connectToDatabase();
         try {
           const userExists = await User.findOne({ email: user.email });
           
-          // If this is a new Google user, save them to our MongoDB
           if (!userExists) {
             await User.create({
               email: user.email,
               name: user.name,
               image: user.image,
-              // They haven't set their profile yet, so we leave Kapikitab specific fields to their defaults
             });
           }
           return true;
@@ -65,25 +58,42 @@ const handler = NextAuth({
           return false;
         }
       }
-      // If they used email/password, they are already in the DB from signing up
       return true;
     },
     
-    // 4. ATTACH THE MONGODB USER ID TO THE SESSION
-    async jwt({ token, user, session, trigger }) {
+    async jwt({ token, user, trigger, session }) {
+      // This block ONLY runs on the first login event
       if (user) {
-        await connectToDatabase();
-        const dbUser = await User.findOne({ email: user.email });
-        if (dbUser) {
-          token.id = dbUser._id.toString();
+        // 1. If using Credentials, the 'user' object is the MongoDB document directly
+        if ((user as any).class) {
+          const rawClass = String((user as any).class);
+          // Result: "Class 9" -> "9" -> "c9"
+          token.classId = 'c' + rawClass.replace('Class ', '').trim();
+        }
+        
+        // 2. If it's still missing (Google Login), fetch from the database
+        if (!token.classId && user.email) {
+          await connectToDatabase();
+          const dbUser = await User.findOne({ email: user.email }).lean();
+          
+          if (dbUser && dbUser.class) { 
+            const rawClass = String(dbUser.class); 
+            token.classId = 'c' + rawClass.replace('Class ', '').trim();
+          }
         }
       }
+      
+      // Allow manual updates from the frontend to instantly refresh the token
+      if (trigger === "update" && session?.classId) {
+        token.classId = session.classId;
+      }
+      
       return token;
     },
     async session({ session, token }) {
+      // Bind the formatted classId to the frontend session
       if (session.user) {
-        // @ts-ignore - appending custom id to session type
-        session.user.id = token.id;
+        (session.user as any).classId = token.classId;
       }
       return session;
     }
@@ -93,7 +103,7 @@ const handler = NextAuth({
   },
   secret: process.env.NEXTAUTH_SECRET,
   pages: {
-    signIn: '/login', // We will build this custom UI next!
+    signIn: '/login', 
   },
 });
 

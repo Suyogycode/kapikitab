@@ -1,55 +1,17 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PenTool, BrainCircuit, Map, Beaker, Compass, User, Book, X } from 'lucide-react';
+import { PenTool, BrainCircuit, Map, Beaker, Compass, User, Book, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 
 export const DashboardContext = React.createContext({
+  currentClassId: 'c12', 
   activeSubject: 'math',
   setActiveSubject: (subject: string) => {}
 });
-
-// --- PROFILE OVERLAY COMPONENT ---
-const ProfileOverlay = ({ isOpen, onClose, activeTab, setActiveTab }: any) => {
-  const tabs = [
-    { id: 'profile', label: 'Profile' },
-    { id: 'library', label: 'Library' },
-    { id: 'progress', label: 'Progress' }
-  ];
-
-  return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 bg-stone-900/20 backdrop-blur-sm z-60" />
-          <motion.div initial={{ opacity: 0, y: 40, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20, scale: 0.95 }} transition={{ type: "spring", damping: 25, stiffness: 300 }} className="fixed top-24 left-4 right-4 bottom-24 lg:left-20 lg:right-20 lg:bottom-10 bg-[#FDFCF8]/95 backdrop-blur-3xl border border-white shadow-2xl rounded-[2.5rem] z-70 flex flex-col overflow-hidden">
-            <div className="w-full flex items-center justify-between p-4 sm:p-6 bg-white/50 border-b border-stone-100">
-              <div className="flex space-x-0 sm:space-x-1 p-1 bg-stone-200/50 backdrop-blur-xl rounded-4xl border border-stone-100 overflow-x-auto no-scrollbar">
-                {tabs.map((tab) => {
-                  const isActive = activeTab === tab.id;
-                  return (
-                    <button key={tab.id} onClick={() => setActiveTab(tab.id)} className="relative px-4 sm:px-6 py-2 rounded-full text-xs sm:text-sm font-medium transition-colors z-10 whitespace-nowrap">
-                      {isActive && <motion.div layoutId="profileOverlayTab" className="absolute inset-0 bg-white shadow-sm border border-stone-200 rounded-full -z-10" transition={{ type: "spring", stiffness: 400, damping: 30 }} />}
-                      <span className={isActive ? 'text-stone-900' : 'text-stone-500 hover:text-stone-700'}>{tab.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-              <button onClick={onClose} className="shrink-0 ml-2 h-8 w-8 sm:h-10 sm:w-10 bg-white border border-stone-200 shadow-sm rounded-full flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-stone-50 transition-colors">
-                <X size={18} className="sm:w-5 sm:h-5" />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto no-scrollbar p-6 relative flex items-center justify-center text-stone-400 font-serif text-xl sm:text-2xl h-full">
-                {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Data Syncing...
-            </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
-  );
-};
 
 // --- LIQUID GLASS MENU ---
 const LiquidGlassMenu = ({ items, activeItem, setActiveItem, isHorizontal = true }: any) => {
@@ -68,17 +30,49 @@ const LiquidGlassMenu = ({ items, activeItem, setActiveItem, isHorizontal = true
   );
 };
 
-// ============================================================================
-// MASTER DASHBOARD LAYOUT
-// ============================================================================
+const ALL_SUBJECTS = {
+  math: { id: 'math', label: 'Mathematics' },
+  sci: { id: 'sci', label: 'Science' },
+  physics: { id: 'physics', label: 'Physics' },
+  chemistry: { id: 'chemistry', label: 'Chemistry' },
+  biology: { id: 'biology', label: 'Biology' }
+};
+
+const CLASS_ROUTING_MAP: Record<string, string[]> = {
+  c8: ['math', 'sci'],
+  c9: ['math', 'sci'],
+  c10: ['math', 'sci'],
+  c11: ['math', 'physics', 'chemistry', 'biology'],
+  c12: ['math', 'physics', 'chemistry', 'biology'],
+};
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname(); 
+  const { data: session, status } = useSession();
   
-  const [isProfileOverlayOpen, setIsProfileOverlayOpen] = useState(false);
-  const [showProfile, setShowProfile] = useState(false);
-  const [activeProfileTab, setActiveProfileTab] = useState('profile');
   const [showSubject, setShowSubject] = useState(false);
-  const [activeSubject, setActiveSubject] = useState('math');
+  
+  const currentClassId = (session?.user as any)?.classId || 'c12'; 
+  const allowedSubjects = CLASS_ROUTING_MAP[currentClassId] || ['math', 'sci'];
+  
+  const [activeSubject, setActiveSubject] = useState(() => allowedSubjects[0]);
+
+  useEffect(() => {
+    if (!allowedSubjects.includes(activeSubject)) {
+      setActiveSubject(allowedSubjects[0]);
+    }
+  }, [currentClassId, activeSubject, allowedSubjects]);
+
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[#FDFCF8] text-stone-800">
+        <Loader2 className="animate-spin text-emerald-600 mb-4" size={40} />
+        <h2 className="font-serif text-xl sm:text-2xl font-medium">Syncing Student Profile...</h2>
+      </div>
+    );
+  }
+
+  const subjectTabs = allowedSubjects.map((id: string) => ALL_SUBJECTS[id as keyof typeof ALL_SUBJECTS]);
 
   const navItems = [
     { id: 'practice', href: '/dashboard/practice', icon: PenTool, label: 'Practice' },
@@ -88,32 +82,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { id: 'explore', href: '/dashboard/explore', icon: Compass, label: 'Explore' },
   ];
 
-  const profileTabs = [{ id: 'profile', label: 'Profile' }, { id: 'library', label: 'Library' }, { id: 'progress', label: 'Progress' }];
-  const subjectTabs = [{ id: 'math', label: 'Mathematics' }, { id: 'physics', label: 'Physics' }, { id: 'chemistry', label: 'Chemistry' }, { id: 'biology', label: 'Biology' }, { id: 'computer', label: 'Computer Sci' }];
-
   return (
-    // Added overscroll-none to the root container to stop the rubber-band bounce effect
     <div className="h-screen w-full bg-[#FDFCF8] overflow-hidden flex flex-col relative selection:bg-emerald-100 overscroll-none">
       
-      {/* TOP FLOATING HEADERS */}
       <header className="absolute top-0 w-full z-50 pointer-events-none p-4 sm:p-6 lg:p-8 flex justify-between items-start">
-        {/* Profile Widget */}
+        
+        {/* REPLACED PROFILE OVERLAY TRIGGER WITH A LINK */}
         <div className="pointer-events-auto relative flex flex-col items-start space-y-4">
-          <button onClick={() => { setShowProfile(!showProfile); setShowSubject(false); }} className="h-12 w-12 sm:h-14 sm:w-14 bg-white/70 backdrop-blur-xl border border-white shadow-lg rounded-full flex items-center justify-center transition-transform hover:scale-105 z-20">
-            <User className="text-stone-700 w-5 h-5 sm:w-6 sm:h-6" />
-          </button>
-          <AnimatePresence>
-            {showProfile && (
-              <motion.div initial={{ opacity: 0, x: -20, scale: 0.95 }} animate={{ opacity: 1, x: 0, scale: 1 }} exit={{ opacity: 0, x: -20, scale: 0.95 }} className="absolute top-14 sm:top-16 left-0 origin-top-left max-w-[90vw]">
-                <LiquidGlassMenu items={profileTabs} activeItem={activeProfileTab} setActiveItem={(id: string) => { setActiveProfileTab(id); setShowProfile(false); setIsProfileOverlayOpen(true); }} isHorizontal={true} />
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <Link href="/dashboard/profile">
+            <button className="h-12 w-12 sm:h-14 sm:w-14 bg-white/70 backdrop-blur-xl border border-white shadow-lg rounded-full flex items-center justify-center transition-transform hover:scale-105 z-20">
+              <User className={`${pathname === '/dashboard/profile' ? 'text-emerald-600' : 'text-stone-700'} w-5 h-5 sm:w-6 sm:h-6`} />
+            </button>
+          </Link>
         </div>
 
-        {/* Subject Widget */}
         <div className="pointer-events-auto relative flex flex-col items-end space-y-4">
-          <button onClick={() => { setShowSubject(!showSubject); setShowProfile(false); }} className="h-12 w-12 sm:h-14 sm:w-14 bg-white/70 backdrop-blur-xl border border-white shadow-lg rounded-full flex items-center justify-center transition-transform hover:scale-105 z-20">
+          <button onClick={() => setShowSubject(!showSubject)} className="h-12 w-12 sm:h-14 sm:w-14 bg-white/70 backdrop-blur-xl border border-white shadow-lg rounded-full flex items-center justify-center transition-transform hover:scale-105 z-20">
             <Book className="text-emerald-700 w-5 h-5 sm:w-6 sm:h-6" />
           </button>
           <AnimatePresence>
@@ -126,15 +110,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </header>
 
-      {/* MAIN SWIPEABLE CONTENT AREA */}
-      <DashboardContext.Provider value={{ activeSubject, setActiveSubject }}>
-        {/* Added overscroll-none here as well to aggressively prevent bouncing inside the scroll area */}
+      <DashboardContext.Provider value={{ currentClassId, activeSubject, setActiveSubject }}>
         <main className="flex-1 relative w-full h-full pt-20 pb-28 sm:pt-24 sm:pb-32 overflow-y-auto no-scrollbar overscroll-none">
           {children}
         </main>
       </DashboardContext.Provider>
 
-      {/* BOTTOM NAVIGATION BAR */}
       <nav className="fixed bottom-0 w-full z-50 pointer-events-none px-4 sm:px-6 pb-6 sm:pb-8 pt-10 bg-gradient-to-t from-[#FDFCF8] via-[#FDFCF8]/90 to-transparent">
         <div className="max-w-md mx-auto pointer-events-auto bg-white/80 backdrop-blur-2xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[2.5rem] flex justify-between items-center px-3 sm:px-4 py-2 sm:py-3 relative">
           {navItems.map((item) => {
@@ -154,8 +135,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           })}
         </div>
       </nav>
-
-      <ProfileOverlay isOpen={isProfileOverlayOpen} onClose={() => setIsProfileOverlayOpen(false)} activeTab={activeProfileTab} setActiveTab={setActiveProfileTab} />
     </div>
   );
 }
