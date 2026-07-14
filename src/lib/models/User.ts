@@ -7,13 +7,14 @@ const userSchema = new Schema(
     password: { type: String },
     image: { type: String },
     
-    // Kapikitab Specific Data
-    grade: { type: String, default: null },
-    subject: { type: [String], default: ['Math'] },
-    level: { type: String, default: null },
-    reason: { type: String, default: null },
-    time: { type: String, default: null },
-    source: { type: String, default: null },
+    // Kapikitab Specific Data (India Focused)
+    state: { type: String, default: null },
+    class: { type: String, default: null },
+    board: { type: String, default: null },
+    
+    // Arrays for multi-select options
+    exams: { type: [String], default: [] },
+    entranceExams: { type: [String], default: [] },
   },
   { timestamps: true }
 );

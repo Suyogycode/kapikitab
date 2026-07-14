@@ -2,24 +2,24 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ArrowLeft, Check, Sparkles } from 'lucide-react';
+import { ChevronRight, ArrowLeft, Check, Sparkles, ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 // --- TYPESCRIPT BLUEPRINTS ---
 type Option = {
   id: string;
   label: string;
-  desc?: string;
 };
 
 type Step = {
   id: string;
   question: string;
+  isMulti?: boolean;
+  isDropdown?: boolean;
   options: Option[];
 };
 
 // --- MASCOT SVG COMPONENT ---
-// Added a className prop so we can scale him down on mobile
 const CuteMascot = ({ isTalking, className = "w-48 h-48" }: { isTalking: boolean, className?: string }) => (
   <motion.svg 
     viewBox="0 0 200 200" 
@@ -29,7 +29,6 @@ const CuteMascot = ({ isTalking, className = "w-48 h-48" }: { isTalking: boolean
   >
     <rect x="40" y="60" width="120" height="100" rx="40" fill="#0d3827" /> 
     <rect x="55" y="80" width="90" height="60" rx="20" fill="#FAF9F5" />
-    
     <motion.circle cx="75" cy="110" r="8" fill="#1c1917" 
       animate={isTalking ? { scaleY: [1, 0.2, 1] } : { scaleY: 1 }} 
       transition={{ duration: 0.3, repeat: isTalking ? Infinity : 0, repeatDelay: 1 }}
@@ -38,181 +37,122 @@ const CuteMascot = ({ isTalking, className = "w-48 h-48" }: { isTalking: boolean
       animate={isTalking ? { scaleY: [1, 0.2, 1] } : { scaleY: 1 }} 
       transition={{ duration: 0.3, repeat: isTalking ? Infinity : 0, repeatDelay: 1 }}
     />
-    
     <rect x="60" y="95" width="30" height="30" rx="10" fill="none" stroke="#d97706" strokeWidth="4" />
     <rect x="110" y="95" width="30" height="30" rx="10" fill="none" stroke="#d97706" strokeWidth="4" />
     <line x1="90" y1="110" x2="110" y2="110" stroke="#d97706" strokeWidth="4" />
-    
     <line x1="100" y1="60" x2="100" y2="30" stroke="#0d3827" strokeWidth="6" strokeLinecap="round" />
     <circle cx="100" cy="25" r="8" fill="#d97706" />
   </motion.svg>
 );
 
-// --- LEVEL OPTIONS DICTIONARY ---
-const LEVEL_OPTIONS: Record<string, Option[]> = {
-  Math: [
-    { id: 'beginner', label: 'Basic Algebra', desc: 'Solving for x without crying.' },
-    { id: 'intermediate', label: 'Quadratic Equations', desc: 'Parabolas are my playground.' },
-    { id: 'advanced', label: 'Calculus & Limits', desc: 'Approaching infinity like a pro.' }
-  ],
-  Physics: [
-    { id: 'beginner', label: 'Kinematics', desc: 'Things moving in straight lines.' },
-    { id: 'intermediate', label: 'Electromagnetism', desc: 'Sparks, magnets, and right-hand rules.' },
-    { id: 'advanced', label: 'Quantum Mechanics', desc: 'Schrödinger’s cat is both alive and dead here.' }
-  ],
-  Chemistry: [
-    { id: 'beginner', label: 'Atomic Structure', desc: 'Protons, neutrons, and happy electrons.' },
-    { id: 'intermediate', label: 'Organic Reactions', desc: 'Drawing hexagons all day.' },
-    { id: 'advanced', label: 'Thermodynamics', desc: 'Embracing the entropy of the universe.' }
-  ],
-  Biology: [
-    { id: 'beginner', label: 'Cell Biology', desc: 'The mitochondria is the powerhouse.' },
-    { id: 'intermediate', label: 'Genetics', desc: 'Punnett squares and double helixes.' },
-    { id: 'advanced', label: 'Neuroscience', desc: 'Brains studying brains.' }
-  ],
-  Computer: [
-    { id: 'beginner', label: 'Variables & Loops', desc: 'Hello World and beyond.' },
-    { id: 'intermediate', label: 'Data Structures', desc: 'Trees, graphs, and memory leaks.' },
-    { id: 'advanced', label: 'Machine Learning', desc: 'Teaching sand to think.' }
-  ]
-};
+const INDIAN_STATES = [
+  "Andaman and Nicobar Islands", "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", 
+  "Chandigarh", "Chhattisgarh", "Dadra and Nagar Haveli", "Daman and Diu", "Delhi", "Goa", 
+  "Gujarat", "Haryana", "Himachal Pradesh", "Jammu and Kashmir", "Jharkhand", "Karnataka", 
+  "Kerala", "Ladakh", "Lakshadweep", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", 
+  "Mizoram", "Nagaland", "Odisha", "Puducherry", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", 
+  "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal"
+];
 
-// --- NERDY MASCOT HUMOR ---
-const HUMOR_LINES: Record<string, Record<string, string>> = {
-  grade: {
-    'High School': "Ah, high school. The era of locker combinations and infinite drama. Let's make learning the easy part.",
-    'College': "College! Powered by instant noodles and caffeine. I respect the hustle.",
-    'University': "University level? Look at you, pursuing mastery. I'll get my academic robes."
-  },
-  subject: {
-    'Math': "Mathematics! The universal language. I calculate a 99.9% chance we'll have fun.",
-    'Physics': "Physics! Because figuring out how the universe works is better than sleep.",
-    'Chemistry': "Chemistry! Let's bond over some explosive ideas.",
-    'Biology': "Biology! The study of life. Let's mutate your brain cells with knowledge.",
-    'Computer': "Computer Science! Ah, my native tongue. 01001000 01101001!"
-  },
-  level: {
-    'beginner': "Every grand master was once a beginner. Let's build a rock-solid foundation.",
-    'intermediate': "Intermediate! You know enough to be dangerous. Let's sharpen those skills.",
-    'advanced': "Advanced?! *Adjusts glasses nervously* Alright genius, let's skip the small talk."
-  },
-  reason: {
-    'School Tests': "School tests. The necessary evil. Let's get you those top marks.",
-    'College Exams': "Exams can be terrifying. Good thing I'm immune to stress. Let's prep!",
-    'Entrance Exams': "Competitive exams? We're going into beast mode. No mercy.",
-    'Curiosity': "Curiosity?! My favorite reason! Learning just for the joy of it. *Sheds a digital tear*"
-  },
-  time: {
-    '15 mins': "15 minutes a day keeps the ignorance away. Consistency is key!",
-    '25 mins': "The Pomodoro sweet spot! 25 minutes of hyper-focus coming up.",
-    '30+ mins': "30+ minutes? You're a marathon runner of the mind. I'm ready!"
-  },
-  source: {
-    'Friend': "A friend told you? Tell them a robot says thank you.",
-    'Social Media': "Social media algorithm brought you here? Good bot.",
-    'Search Engine': "Ah, the search engine. The modern oracle.",
-    'Other': "Mysterious origins. I like it."
-  }
-};
+const ENTRANCE_EXAMS = [
+  "IIT-JEE (Mains & Advanced)",
+  "NEET",
+  "NDA"
+];
 
 export default function SetProfile() {
   const router = useRouter(); 
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});  
-  const [mascotText, setMascotText] = useState("Hello! I'm Kapi. Let's build a universe perfectly tailored to your brain. Shall we begin?");
+  const [mascotText, setMascotText] = useState("Hello! I'm Kapi. Let's set up your profile for India.");
   const [isTalking, setIsTalking] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [entranceDropdownOpen, setEntranceDropdownOpen] = useState(false);
 
   const steps: Step[] = [
     {
-      id: 'grade',
-      question: "First things first, where are you currently in your academic journey?",
+      id: 'state',
+      question: "Which state are you currently studying in?",
+      isDropdown: true,
+      options: INDIAN_STATES.map(state => ({ id: state, label: state }))
+    },
+    {
+      id: 'class',
+      question: "Which class are you currently in?",
       options: [
-        { id: 'High School', label: 'High School', desc: 'Navigating the foundational years.' },
-        { id: 'College', label: 'College', desc: 'Exploring deeper concepts.' },
-        { id: 'University', label: 'University', desc: 'Specializing and mastering.' }
+        { id: 'Class 8', label: 'Class 8th' },
+        { id: 'Class 9', label: 'Class 9th' },
+        { id: 'Class 10', label: 'Class 10th' },
+        { id: 'Class 11', label: 'Class 11th' },
+        { id: 'Class 12', label: 'Class 12th' }
       ]
     },
     {
-      id: 'subject',
-      question: "If you had to pick one domain that sparks your curiosity the most, what would it be?",
+      id: 'board',
+      question: "Which educational board do you follow?",
       options: [
-        { id: 'Math', label: 'Mathematics', desc: 'Logic, numbers, and absolute truth.' },
-        { id: 'Physics', label: 'Physics', desc: 'The fundamental laws of nature.' },
-        { id: 'Chemistry', label: 'Chemistry', desc: 'Matter, reactions, and bonds.' },
-        { id: 'Biology', label: 'Biology', desc: 'The intricate machinery of life.' },
-        { id: 'Computer', label: 'Computer Science', desc: 'Code, algorithms, and logic.' }
+        { id: 'CBSE', label: 'CBSE' },
+        { id: 'ICSE', label: 'ICSE' },
+        { id: 'State Board', label: 'State Board' }
       ]
     },
     {
-      id: 'level',
-      question: "Based on your subject, where do you currently stand?",
-      options: []
-    },
-    {
-      id: 'reason',
-      question: "What is the main driving force bringing you here today?",
+      id: 'exams',
+      question: "Which exams are you targeting? (Select all that apply)",
+      isMulti: true,
       options: [
-        { id: 'School Tests', label: 'School Tests', desc: 'Need help acing the upcoming class exams.' },
-        { id: 'College Exams', label: 'College Exams', desc: 'Preparing for tough semester finals.' },
-        { id: 'Entrance Exams', label: 'Entrance Exams', desc: 'Gearing up for competitive admissions.' },
-        { id: 'Curiosity', label: 'Pure Curiosity', desc: 'I just want to understand the universe.' }
-      ]
-    },
-    {
-      id: 'time',
-      question: "How much time can you dedicate to exploring with me each day?",
-      options: [
-        { id: '15 mins', label: '15 Minutes', desc: 'A quick, powerful daily sprint.' },
-        { id: '25 mins', label: '25 Minutes', desc: 'A solid block of focused learning.' },
-        { id: '30+ mins', label: '30+ Minutes', desc: 'Deep diving into complex simulations.' }
-      ]
-    },
-    {
-      id: 'source',
-      question: "Last question! How did you discover Kapikitab?",
-      options: [
-        { id: 'Friend', label: 'From a friend' },
-        { id: 'Social Media', label: 'Social Media' },
-        { id: 'Search Engine', label: 'Search Engine' },
-        { id: 'Other', label: 'Other' }
+        { id: 'School exams', label: 'School exams' },
+        { id: 'Board exams', label: 'Board exams' },
+        { id: 'Entrance exams', label: 'Entrance exams' }
       ]
     }
   ];
 
-  if (currentStep === 2) {
-    const chosenSubject = (answers.subject?.[0] as string) || 'Math';
-    steps[2].options = LEVEL_OPTIONS[chosenSubject] || [];
-  }
+  const triggerMascotResponse = (message: string) => {
+    setMascotText(message);
+    setIsTalking(true);
+    setTimeout(() => setIsTalking(false), 2000);
+  };
 
   const handleSelect = (optionId: string) => {
-    const stepId = steps[currentStep].id;
+    const step = steps[currentStep];
     
-    if (stepId === 'subject') {
-      const currentSubjects = (answers.subject as string[]) || [];
-      if (currentSubjects.includes(optionId)) {
-        setAnswers({ ...answers, subject: currentSubjects.filter(id => id !== optionId) });
+    if (step.isMulti) {
+      const currentSelected = (answers[step.id] as string[]) || [];
+      if (currentSelected.includes(optionId)) {
+        setAnswers({ ...answers, [step.id]: currentSelected.filter(id => id !== optionId) });
       } else {
-        setAnswers({ ...answers, subject: [...currentSubjects, optionId] });
+        setAnswers({ ...answers, [step.id]: [...currentSelected, optionId] });
       }
     } else {
-      setAnswers({ ...answers, [stepId]: optionId });
+      setAnswers({ ...answers, [step.id]: optionId });
     }
     
-    const line = HUMOR_LINES[stepId]?.[optionId];
-    if (line) {
-      setMascotText(line);
-      setIsTalking(true);
-      setTimeout(() => setIsTalking(false), 2000);
+    triggerMascotResponse("Selection saved. Let's continue.");
+  };
+
+  const handleEntranceSelect = (examId: string) => {
+    const currentSelected = (answers.entranceExams as string[]) || [];
+    if (currentSelected.includes(examId)) {
+      setAnswers({ ...answers, entranceExams: currentSelected.filter(id => id !== examId) });
+    } else {
+      setAnswers({ ...answers, entranceExams: [...currentSelected, examId] });
     }
   };
 
   const handleNext = async () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
-      setMascotText("Take your time. I'm processing...");
+      
+      const transitionMessages = [
+        "Got it. What class are you in?",
+        "Noted. Which board do you belong to?",
+        "Almost done. What are your target exams?"
+      ];
+      triggerMascotResponse(transitionMessages[currentStep]);
+      
     } else {
-      setMascotText("Profile complete! Saving your universe to the cloud...");
+      setMascotText("Profile complete! Saving your data...");
       setIsTalking(true);
       setIsSaving(true);
       
@@ -224,30 +164,36 @@ export default function SetProfile() {
         });
 
         if (res.ok) {
-          setMascotText("All systems go. Teleporting you now!");
+          setMascotText("All set. Redirecting to dashboard...");
           setTimeout(() => router.push('/dashboard'), 1000);
         } else {
-          setMascotText("Hmm, the database hiccuped. Let's try that again.");
+          setMascotText("There was an error saving your profile. Please try again.");
           setIsSaving(false);
         }
       } catch (error) {
-        setMascotText("Connection error. Is the Wi-Fi still breathing?");
+        setMascotText("Connection error. Please check your internet.");
         setIsSaving(false);
       }
     }
   };
 
   const currentData = steps[currentStep];
-  const progressPercentage = (currentStep / steps.length) * 100;
+  const progressPercentage = ((currentStep + 1) / steps.length) * 100;
+
+  // Bulletproof logic for showing the Continue button
+  const currentAnswer = answers[currentData.id];
+  const hasAnswer = Array.isArray(currentAnswer) ? currentAnswer.length > 0 : !!currentAnswer;
+  const isEntranceSelected = Array.isArray(currentAnswer) ? currentAnswer.includes('Entrance exams') : currentAnswer === 'Entrance exams';
+  const hasEntranceDetails = (answers.entranceExams as string[])?.length > 0;
+  const showNextButton = hasAnswer && (!isEntranceSelected || hasEntranceDetails);
 
   return (
     <div className="min-h-screen bg-[#FDFCF8] flex flex-col lg:flex-row font-sans text-stone-800 overflow-x-hidden">
       
-      {/* LEFT COLUMN / MOBILE HEADER: Mascot & Progress Indicator */}
+      {/* LEFT COLUMN: Mascot & Progress Indicator (Restored Original Colors) */}
       <div className="w-full lg:w-5/12 bg-kapi-dark text-white p-5 lg:p-10 flex flex-col justify-between relative overflow-hidden shrink-0 shadow-md lg:shadow-none z-20">
         <div className="absolute top-[-10%] left-[-20%] w-[80%] h-[80%] bg-white/5 rounded-full blur-3xl pointer-events-none" />
         
-        {/* Top Bar */}
         <div className="relative z-10 flex justify-between items-center mb-4 lg:mb-0">
           {currentStep > 0 ? (
             <button 
@@ -262,7 +208,6 @@ export default function SetProfile() {
           <span className="font-serif font-bold text-lg lg:text-xl tracking-tight text-white/90">Kapikitab.</span>
         </div>
 
-        {/* Mascot & Dialogue - Horizontal on Mobile, Vertical on Desktop */}
         <div className="relative z-10 flex flex-row lg:flex-col items-center lg:justify-center gap-4 lg:gap-0 mt-2 lg:mt-12 grow">
           <CuteMascot isTalking={isTalking} className="w-20 h-20 sm:w-24 sm:h-24 lg:w-48 lg:h-48 shrink-0" />
           
@@ -272,18 +217,17 @@ export default function SetProfile() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             className="lg:mt-8 bg-white text-stone-800 p-3 lg:p-5 rounded-2xl lg:rounded-3xl lg:rounded-tl-none shadow-xl border border-stone-100 w-full lg:max-w-xs relative text-left lg:text-center"
           >
-            <Sparkles size={14} className="absolute -top-1.5 -right-1.5 lg:-top-2 lg:-right-2 text-amber-500 hidden lg:block" />
+            <Sparkles size={14} className="absolute -top-1.5 -right-1.5 lg:-top-2 lg:-right-2 text-kapi-green hidden lg:block" />
             <p className="font-medium text-xs sm:text-sm leading-snug lg:leading-relaxed">{mascotText}</p>
           </motion.div>
         </div>
 
-        {/* Progress Bar */}
         <div className="relative z-10 mt-6 lg:mt-12">
           <div className="flex justify-between text-[10px] lg:text-xs font-medium text-kapi-green mb-2 lg:mb-3 uppercase tracking-wider">
             <span>Profile Setup</span>
             <span>{Math.round(progressPercentage)}%</span>
           </div>
-          <div className="h-1.5 lg:h-2 w-full bg-stone-950 rounded-full overflow-hidden">
+          <div className="h-1.5 lg:h-2 w-full bg-black/50 rounded-full overflow-hidden">
             <motion.div 
               className="h-full bg-kapi-green rounded-full"
               initial={{ width: 0 }}
@@ -308,54 +252,124 @@ export default function SetProfile() {
             <span className="text-kapi-green font-bold tracking-widest text-[10px] lg:text-xs uppercase mb-3 block">
               Step {currentStep + 1} of {steps.length}
             </span>
-            <h2 className="text-2xl sm:text-3xl lg:text-5xl font-serif font-medium text-stone-900 leading-tight mb-6 lg:mb-10">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-serif font-medium text-stone-900 leading-tight mb-6 lg:mb-10">
               {currentData.question}
             </h2>
 
             <div className="space-y-3 lg:space-y-4">
-            {currentData.options.map((option) => {
-            const isSelected = Array.isArray(answers[currentData.id]) 
-                ? (answers[currentData.id] as string[]).includes(option.id)
-                : answers[currentData.id] === option.id;                
+              
+              {/* DROPDOWN RENDERER (Step 1) */}
+              {currentData.isDropdown && (
+                <div className="relative w-full">
+                  <select
+                    value={(answers[currentData.id] as string) || ""}
+                    onChange={(e) => handleSelect(e.target.value)}
+                    className="w-full appearance-none p-4 lg:p-6 rounded-2xl lg:rounded-3xl border-2 border-stone-200 bg-white text-stone-800 text-lg font-medium transition-colors focus:outline-none focus:border-kapi-green hover:border-emerald-300"
+                  >
+                    <option value="" disabled>Select your state</option>
+                    {currentData.options.map((opt) => (
+                      <option key={opt.id} value={opt.id}>{opt.label}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" />
+                </div>
+              )}
+
+              {/* STANDARD BUTTON RENDERER (Steps 2, 3, 4) */}
+              {!currentData.isDropdown && currentData.options.map((option) => {
+                const isSelected = Array.isArray(answers[currentData.id]) 
+                    ? (answers[currentData.id] as string[]).includes(option.id)
+                    : answers[currentData.id] === option.id;                
                 
                 return (
-                  <motion.button
-                    key={option.id}
-                    whileHover={{ scale: 1.01 }}
-                    whileTap={{ scale: 0.99 }}
-                    onClick={() => handleSelect(option.id)}
-                    className={`w-full text-left p-4 lg:p-6 rounded-2xl lg:rounded-3xl border-2 transition-all duration-300 flex items-center justify-between group ${
-                      isSelected 
-                        ? 'border-kapi-green bg-emerald-50/30 shadow-sm' 
-                        : 'border-stone-200 hover:border-emerald-300 bg-white hover:shadow-sm'
-                    }`}
-                  >
-                    <div className="pr-4">
-                      <h3 className={`text-lg lg:text-xl font-medium ${isSelected ? 'text-kapi-dark' : 'text-stone-800'}`}>
+                  <div key={option.id} className="w-full">
+                    <motion.button
+                      whileHover={{ scale: 1.01 }}
+                      whileTap={{ scale: 0.99 }}
+                      onClick={() => handleSelect(option.id)}
+                      className={`w-full text-left p-4 lg:p-6 rounded-2xl lg:rounded-3xl border-2 transition-all duration-300 flex items-center justify-between group ${
+                        isSelected 
+                          ? 'border-kapi-green bg-emerald-50/30 shadow-sm' 
+                          : 'border-stone-200 hover:border-emerald-300 bg-white hover:shadow-sm'
+                      }`}
+                    >
+                      <h3 className={`text-lg font-medium ${isSelected ? 'text-emerald-900' : 'text-stone-800'}`}>
                         {option.label}
                       </h3>
-                      {option.desc && (
-                        <p className={`text-xs lg:text-sm mt-1 ${isSelected ? 'text-emerald-800' : 'text-stone-500'}`}>
-                          {option.desc}
-                        </p>
+                      
+                      <div className={`shrink-0 h-5 w-5 lg:h-6 lg:w-6 rounded-full border flex items-center justify-center transition-colors ${
+                        isSelected ? 'border-kapi-green bg-kapi-green' : 'border-stone-300 group-hover:border-kapi-green'
+                      }`}>
+                        {isSelected && <Check size={12} className="text-white lg:w-3.5 lg:h-3.5" />}
+                      </div>
+                    </motion.button>
+
+                    {/* NESTED ENTRANCE EXAM MULTI-SELECT DROPDOWN - Fixed Overflow & Animation */}
+                    <AnimatePresence>
+                      {isSelected && option.id === 'Entrance exams' && (
+                        <motion.div 
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="mt-3 px-2 overflow-hidden"
+                        >
+                          <div className="bg-stone-50 border border-stone-200 rounded-2xl p-4">
+                            <button
+                              onClick={() => setEntranceDropdownOpen(!entranceDropdownOpen)}
+                              className="w-full flex justify-between items-center text-left bg-white p-3 rounded-xl border border-stone-200 text-stone-700 font-medium"
+                            >
+                              <span className="truncate pr-4">
+                                {(answers.entranceExams as string[])?.length > 0 
+                                  ? (answers.entranceExams as string[]).join(", ") 
+                                  : "Select Entrance Exams..."}
+                              </span>
+                              <ChevronDown size={18} className={`transition-transform duration-300 ${entranceDropdownOpen ? 'rotate-180' : ''}`} />
+                            </button>
+
+                            <AnimatePresence>
+                              {entranceDropdownOpen && (
+                                <motion.div 
+                                  initial={{ opacity: 0, height: 0 }}
+                                  animate={{ opacity: 1, height: 'auto' }}
+                                  exit={{ opacity: 0, height: 0 }}
+                                  className="mt-2 bg-white border border-stone-200 rounded-xl shadow-sm overflow-hidden flex flex-col p-2 space-y-1"
+                                >
+                                  {ENTRANCE_EXAMS.map(exam => {
+                                    const isExamSelected = (answers.entranceExams as string[] || []).includes(exam);
+                                    return (
+                                      <button
+                                        key={exam}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleEntranceSelect(exam);
+                                        }}
+                                        className={`w-full text-left p-3 rounded-lg flex justify-between items-center transition-colors ${
+                                          isExamSelected ? 'bg-emerald-50 text-emerald-800 font-medium' : 'hover:bg-stone-50 text-stone-700'
+                                        }`}
+                                      >
+                                        <span>{exam}</span>
+                                        {isExamSelected && <Check size={16} className="text-emerald-600" />}
+                                      </button>
+                                    );
+                                  })}
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
+                        </motion.div>
                       )}
-                    </div>
-                    
-                    <div className={`shrink-0 h-5 w-5 lg:h-6 lg:w-6 rounded-full border flex items-center justify-center transition-colors ${
-                      isSelected ? 'border-kapi-green bg-kapi-green' : 'border-stone-300 group-hover:border-emerald-400'
-                    }`}>
-                      {isSelected && <Check size={12} className="text-white lg:w-3.5 lg:h-3.5" />}
-                    </div>
-                  </motion.button>
+                    </AnimatePresence>
+                  </div>
                 );
               })}
             </div>
 
             <AnimatePresence>
-              {answers[currentData.id] && (
+              {showNextButton && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 20 }}
                   className="mt-8 lg:mt-10 flex justify-end pb-10 lg:pb-0"
                 >
                   <button 
