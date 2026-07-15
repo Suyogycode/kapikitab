@@ -12,13 +12,14 @@ const questionSchema = new Schema({
   type: { 
     type: String, 
     required: true, 
-    enum: ['mcq_single', 'mcq_multiple', 'numerical_input'] 
+    // FIXED: Changed 'numerical_input' to 'numeric' to match frontend state
+    enum: ['mcq_single', 'mcq_multiple', 'numeric'] 
   },
   text: { type: String, required: true },
   options: [optionSchema],
-  correctAnswers: [{ type: String, required: true }], // Array supports multiple correct options
+  correctAnswers: [{ type: String, required: true }],
   explanation: { type: String },
-  tolerance: { type: Number, default: 0 } // For numerical physics answers
+  tolerance: { type: Number, default: 0 } 
 }, { timestamps: true });
 
 const Question = models.Question || mongoose.model('Question', questionSchema);
