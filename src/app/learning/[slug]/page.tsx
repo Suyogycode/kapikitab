@@ -19,11 +19,9 @@ export default function DynamicLearningWorkspace() {
   const [isLoading, setIsLoading] = useState(true);
   const [activeUnit, setActiveUnit] = useState<string>('');
 
-  // Practice State Management 
-  const [answeredQuestions, setAnsweredQuestions] = useState<Record<string, string>>({}); // Tracks answers per question ID
-  const [activeQuestionIndexes, setActiveQuestionIndexes] = useState<Record<string, number>>({}); // Tracks current question index per unit
+  const [answeredQuestions, setAnsweredQuestions] = useState<Record<string, string>>({});
+  const [activeQuestionIndexes, setActiveQuestionIndexes] = useState<Record<string, number>>({});
 
-  // Fetch Chapter, Assets, and Questions simultaneously
   useEffect(() => {
     const fetchAllData = async () => {
       try {
@@ -81,7 +79,6 @@ export default function DynamicLearningWorkspace() {
     }
   };
 
-  // Scroll Animations for Background[cite: 2]
   const { scrollYProgress } = useScroll();
   const backgroundColor = useTransform(scrollYProgress, [0, 0.5, 1], ["#FDFCF8", "#F5F5F0", "#FDFCF8"]);
 
@@ -108,7 +105,6 @@ export default function DynamicLearningWorkspace() {
   return (
     <motion.div className="relative w-full min-h-screen transition-colors duration-200 text-stone-800" style={{ backgroundColor }}>
       
-      {/* 1. TOP FLOATING NAVIGATION */}
       <div className="sticky top-0 left-0 w-full p-4 sm:p-6 flex justify-between items-start z-50 pointer-events-none">
         <Link href="/dashboard/lesson" className="pointer-events-auto">
           <button className="h-10 w-10 sm:h-12 sm:w-12 rounded-full flex items-center justify-center backdrop-blur-xl bg-white/50 text-stone-800 border border-stone-200 hover:scale-105 transition-all shadow-sm">
@@ -116,7 +112,6 @@ export default function DynamicLearningWorkspace() {
           </button>
         </Link>
 
-        {/* Dynamic Unit Navigation Pills */}
         <div className="pointer-events-auto p-1.5 rounded-full flex items-center shadow-lg backdrop-blur-xl bg-white/50 border border-stone-200 text-stone-600 text-xs sm:text-sm font-medium overflow-x-auto max-w-[60vw] no-scrollbar">
           {chapter.units?.map((unit: any) => {
             const isActive = activeUnit === unit.unitId;
@@ -135,7 +130,6 @@ export default function DynamicLearningWorkspace() {
         <div className="w-10 sm:w-12" />
       </div>
 
-      {/* 2. CHAPTER HERO */}
       <div className="w-full flex flex-col items-center pt-12 sm:pt-20 px-4 sm:px-6 pb-16">
         <div className="max-w-4xl w-full text-center">
           <span className="text-emerald-600 font-bold tracking-widest text-xs sm:text-sm uppercase mb-4 block">
@@ -147,7 +141,6 @@ export default function DynamicLearningWorkspace() {
         </div>
       </div>
 
-      {/* 3. DYNAMIC UNIT MAPPING */}
       <div className="max-w-4xl mx-auto w-full px-4 sm:px-6 pb-32 space-y-24">
         {chapter.units?.map((unit: any) => {
           
@@ -158,11 +151,9 @@ export default function DynamicLearningWorkspace() {
           const labAsset = unitAssets.find(a => a.type === 'react_simulation');
           const documentAssets = unitAssets.filter(a => ['pdf_document', 'diagram'].includes(a.type));
 
-          // Determine current question for this unit
           const qIndex = activeQuestionIndexes[unit.unitId] || 0;
           const currentQuestion = unitQuestions[qIndex];
 
-          // Pre-calculate evaluation logic cleanly outside of the JSX to avoid scope errors
           const answeredValue = currentQuestion ? answeredQuestions[currentQuestion.questionId] : undefined;
           const isAnswered = !!answeredValue;
           const isCorrect = isAnswered && currentQuestion && (
@@ -183,15 +174,10 @@ export default function DynamicLearningWorkspace() {
 
               <div className="space-y-12">
                 
-                {/* --- CINEMA (Video) --- */}
                 {videoAsset && (
                   <div className="w-full aspect-video bg-black rounded-2xl overflow-hidden shadow-xl border border-stone-200">
                     {videoAsset.content?.videoUrl ? (
-                      <iframe 
-                        src={videoAsset.content.videoUrl}
-                        className="w-full h-full border-0"
-                        allowFullScreen
-                      />
+                      <iframe src={videoAsset.content.videoUrl} className="w-full h-full border-0" allowFullScreen />
                     ) : (
                       <div className="w-full h-full flex flex-col items-center justify-center text-white/50 bg-stone-900">
                         <PlayCircle size={48} className="mb-4 opacity-50" />
@@ -201,7 +187,6 @@ export default function DynamicLearningWorkspace() {
                   </div>
                 )}
 
-                {/* --- LAB (React Simulation) --- */}
                 {labAsset && (
                   <div className="w-full h-[50vh] bg-white rounded-2xl shadow-sm border border-stone-200 flex flex-col items-center justify-center relative overflow-hidden">
                      <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'radial-gradient(#1c1917 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
@@ -211,7 +196,6 @@ export default function DynamicLearningWorkspace() {
                   </div>
                 )}
 
-                {/* --- DOCUMENTS (PDFs/Diagrams) --- */}
                 {documentAssets.length > 0 && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {documentAssets.map((doc, idx) => (
@@ -232,11 +216,9 @@ export default function DynamicLearningWorkspace() {
                   </div>
                 )}
 
-                {/* --- PRACTICE (Questions Carousel) --- */}
                 {unitQuestions.length > 0 && currentQuestion && (
                   <div className="bg-white border border-stone-200 rounded-3xl p-6 sm:p-10 shadow-sm relative overflow-hidden">
                     
-                    {/* Header and Progress Indicator */}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4 border-b border-stone-100 pb-6">
                       <h3 className="text-xl font-serif text-stone-900 flex items-center gap-3">
                         <CheckCircle2 className="text-emerald-500" size={24} /> 
@@ -257,7 +239,6 @@ export default function DynamicLearningWorkspace() {
                       </div>
                     </div>
                     
-                    {/* Question Content Container with Framer Motion */}
                     <div className="min-h-[250px]">
                       <AnimatePresence mode="wait">
                         <motion.div 
@@ -272,54 +253,67 @@ export default function DynamicLearningWorkspace() {
                             {currentQuestion.text}
                           </p>
 
-                          {/* Evaluation Logic */}
-          {currentQuestion.type === 'numeric' ? (
-            <div className="flex items-center space-x-4">
-              <input
-                type="number"
-                disabled={isAnswered}
-                className={`p-4 rounded-xl border-2 font-mono text-lg w-40 transition-colors ${isAnswered ? (isCorrect ? 'border-emerald-500 bg-emerald-50' : 'border-red-400 bg-red-50') : 'border-stone-200 focus:border-stone-400 outline-none'}`}
-                placeholder="Value..."
-                onBlur={(e) => !isAnswered && e.target.value && handlePracticeSelect(currentQuestion.questionId, e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !isAnswered && e.currentTarget.value) {
-                    handlePracticeSelect(currentQuestion.questionId, e.currentTarget.value);
-                  }
-                }}
-              />
-              {isAnswered && (isCorrect ? <CheckCircle2 className="text-emerald-500" /> : <XCircle className="text-red-500" />)}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {currentQuestion.options?.map((opt: any) => {
-                const isSelected = answeredValue === opt.id;
-                let btnStyle = "border-stone-200 text-stone-600 hover:border-emerald-300 hover:bg-emerald-50/30";
-                
-                if (isAnswered) {
-                  if (currentQuestion.correctAnswers?.includes(opt.id)) btnStyle = "border-emerald-500 bg-emerald-50 text-emerald-800";
-                  else if (isSelected) btnStyle = "border-red-400 bg-red-50 text-red-800";
-                  else btnStyle = "border-stone-100 text-stone-300 opacity-50";
-                }
-                
-                return (
-                  <button 
-                    key={opt.id} 
-                    disabled={isAnswered} 
-                    onClick={() => handlePracticeSelect(currentQuestion.questionId, opt.id)} 
-                    className={`p-4 text-left rounded-xl border-2 transition-all font-mono text-sm flex items-center justify-between ${btnStyle}`}
-                  >
-                    <span><span className="opacity-50 mr-2">{opt.id}.</span>{opt.text}</span>
-                    {isAnswered && currentQuestion.correctAnswers?.includes(opt.id) && <CheckCircle2 size={18} className="text-emerald-500" />}
-                  </button>
-                );
-              })}
-            </div>
-          )}
+                          {currentQuestion.type === 'numeric' ? (
+                            <div className="flex items-center space-x-4">
+                              <input
+                                type="number"
+                                disabled={isAnswered}
+                                className={`p-4 rounded-xl border-2 font-mono text-lg w-40 transition-colors ${isAnswered ? (isCorrect ? 'border-emerald-500 bg-emerald-50' : 'border-red-400 bg-red-50') : 'border-stone-200 focus:border-stone-400 outline-none'}`}
+                                placeholder="Value..."
+                                onBlur={(e) => !isAnswered && e.target.value && handlePracticeSelect(currentQuestion.questionId, e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' && !isAnswered && e.currentTarget.value) {
+                                    handlePracticeSelect(currentQuestion.questionId, e.currentTarget.value);
+                                  }
+                                }}
+                              />
+                              {isAnswered && (isCorrect ? <CheckCircle2 className="text-emerald-500" /> : <XCircle className="text-red-500" />)}
+                            </div>
+                          ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              {currentQuestion.options?.map((opt: any) => {
+                                const isSelected = answeredValue === opt.id;
+                                let btnStyle = "border-stone-200 text-stone-600 hover:border-emerald-300 hover:bg-emerald-50/30";
+                                
+                                if (isAnswered) {
+                                  if (currentQuestion.correctAnswers?.includes(opt.id)) btnStyle = "border-emerald-500 bg-emerald-50 text-emerald-800";
+                                  else if (isSelected) btnStyle = "border-red-400 bg-red-50 text-red-800";
+                                  else btnStyle = "border-stone-100 text-stone-300 opacity-50";
+                                }
+                                
+                                return (
+                                  <button 
+                                    key={opt.id} 
+                                    disabled={isAnswered} 
+                                    onClick={() => handlePracticeSelect(currentQuestion.questionId, opt.id)} 
+                                    className={`p-4 text-left rounded-xl border-2 transition-all font-mono text-sm flex items-center justify-between ${btnStyle}`}
+                                  >
+                                    <span><span className="opacity-50 mr-2">{opt.id}.</span>{opt.text}</span>
+                                    {isAnswered && currentQuestion.correctAnswers?.includes(opt.id) && <CheckCircle2 size={18} className="text-emerald-500" />}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+
+                          {/* --- NEW EXPLANATION UI --- */}
+                          {isAnswered && currentQuestion.explanation && (
+                            <motion.div
+                              initial={{ opacity: 0, y: 10, height: 0 }}
+                              animate={{ opacity: 1, y: 0, height: 'auto' }}
+                              className={`mt-6 p-5 rounded-xl border overflow-hidden ${isCorrect ? 'bg-emerald-50/50 border-emerald-100' : 'bg-stone-50 border-stone-200'}`}
+                            >
+                              <h4 className="text-xs font-bold tracking-widest uppercase text-stone-500 mb-2">Explanation</h4>
+                              <p className="text-sm text-stone-700 font-medium leading-relaxed">
+                                {currentQuestion.explanation}
+                              </p>
+                            </motion.div>
+                          )}
+
                         </motion.div>
                       </AnimatePresence>
                     </div>
 
-                    {/* Navigation Controls */}
                     <div className="mt-8 pt-6 border-t border-stone-100 flex items-center justify-between">
                       <button 
                         onClick={() => handleNavigateQuestion(unit.unitId, 'prev', unitQuestions.length)}
