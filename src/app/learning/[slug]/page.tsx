@@ -198,21 +198,54 @@ export default function DynamicLearningWorkspace() {
 
                 {documentAssets.length > 0 && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {documentAssets.map((doc, idx) => (
-                      <a key={idx} href={doc.content?.fileUrl || doc.content?.imageUrl} target="_blank" rel="noopener noreferrer" className="block">
-                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-stone-200 hover:shadow-md hover:border-blue-200 transition-all group flex items-center space-x-4">
-                          <div className="h-12 w-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                            {doc.type === 'pdf_document' ? <FileText size={24} /> : <ImageIcon size={24} />}
+                    {documentAssets.map((doc, idx) => {
+                      
+                      // Handle the URL dynamically. Since we saved it directly as a string in the last step, 
+                      // we check if doc.content is a string. If you have legacy data, it falls back to the object structure.
+                      const assetUrl = typeof doc.content === 'string' 
+                        ? doc.content 
+                        : doc.content?.url || doc.content?.imageUrl || doc.content?.fileUrl;
+
+                      // 1. RENDER ACTUAL IMAGES FOR DIAGRAMS
+                      if (doc.type === 'diagram') {
+                        return (
+                          <div key={idx} className="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden flex flex-col group">
+                            <div className="w-full h-48 bg-stone-100 relative overflow-hidden">
+                              {/* This img tag fetches your public Cloudflare R2 URL */}
+                              <img 
+                                src={assetUrl} 
+                                alt={doc.title} 
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                              />
+                            </div>
+                            <div className="p-4 bg-white flex items-center justify-between">
+                              <div>
+                                <h4 className="font-medium text-stone-900">{doc.title}</h4>
+                                <span className="text-[10px] text-stone-400 uppercase tracking-widest font-bold">Visual Diagram</span>
+                              </div>
+                              <a href={assetUrl} target="_blank" rel="noopener noreferrer" className="p-2 bg-stone-50 hover:bg-stone-100 rounded-lg text-stone-500 transition-colors">
+                                <ImageIcon size={18} />
+                              </a>
+                            </div>
                           </div>
-                          <div>
-                            <h4 className="font-medium text-stone-900">{doc.title}</h4>
-                            <span className="text-xs text-stone-400 uppercase tracking-widest font-bold">
-                              {doc.type === 'pdf_document' ? 'PDF Guide' : 'Visual Diagram'}
-                            </span>
+                        );
+                      }
+
+                      // 2. RENDER CLICKABLE CARDS FOR PDFS
+                      return (
+                        <a key={idx} href={assetUrl} target="_blank" rel="noopener noreferrer" className="block">
+                          <div className="bg-white p-6 rounded-2xl shadow-sm border border-stone-200 hover:shadow-md hover:border-blue-200 transition-all group flex items-center space-x-4 h-full">
+                            <div className="h-12 w-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                              <FileText size={24} />
+                            </div>
+                            <div>
+                              <h4 className="font-medium text-stone-900">{doc.title}</h4>
+                              <span className="text-xs text-stone-400 uppercase tracking-widest font-bold">PDF Guide</span>
+                            </div>
                           </div>
-                        </div>
-                      </a>
-                    ))}
+                        </a>
+                      );
+                    })}
                   </div>
                 )}
 
