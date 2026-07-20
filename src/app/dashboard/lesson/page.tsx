@@ -13,7 +13,7 @@ import Link from 'next/link';
 import { DashboardContext } from '../layout'; 
 
 // ============================================================================
-// DECOUPLED THEME DICTIONARY (No Data, Just Visuals)
+// DECOUPLED THEME DICTIONARY (Updated keys to match admin shortcodes)
 // ============================================================================
 const subjectThemes: Record<string, any> = {
   math: {
@@ -24,7 +24,7 @@ const subjectThemes: Record<string, any> = {
     watermark: <Sigma className="w-[120vw] h-[120vh] text-[#4A5D4E]/5 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -z-10" />,
     floatingIcons: [Plus, Divide, InfinityIcon, Pi, Triangle, Brackets, Calculator, FunctionSquare, Compass],
   },
-  physics: {
+  phy: { // Changed from 'physics'
     background: 'bg-[#E2E6EB]',
     text: 'text-[#2C3137]',
     accent: 'bg-[#5C6B89]', 
@@ -32,7 +32,7 @@ const subjectThemes: Record<string, any> = {
     watermark: <Orbit className="w-[120vw] h-[120vh] text-[#5C6B89]/5 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -z-10" />,
     floatingIcons: [Waves, Telescope, Zap, Magnet, Atom, Orbit],
   },
-  chemistry: {
+  chem: { // Changed from 'chemistry'
     background: 'bg-[#E1EBE7]',
     text: 'text-[#2A3A35]',
     accent: 'bg-[#52796F]',
@@ -40,7 +40,7 @@ const subjectThemes: Record<string, any> = {
     watermark: <FlaskConical className="w-[120vw] h-[120vh] text-[#52796F]/5 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -z-10" />,
     floatingIcons: [Hexagon, Droplets, FlaskConical, Atom, Beaker],
   },
-  biology: {
+  bio: { // Changed from 'biology'
     background: 'bg-[#E8E4D5]',
     text: 'text-[#423D33]',
     accent: 'bg-[#8A795D]',
@@ -48,7 +48,7 @@ const subjectThemes: Record<string, any> = {
     watermark: <Dna className="w-[120vw] h-[120vh] text-[#8A795D]/5 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -z-10" />,
     floatingIcons: [Sprout, Leaf, Bug, Dna, Microscope],
   },
-  sci: { // General Science for Class 8-10
+  sci: { 
     background: 'bg-[#E5E3E8]',
     text: 'text-[#36323D]',
     accent: 'bg-[#6A5A82]',
@@ -103,9 +103,8 @@ const FloatingAmbientBackground = ({ icons, color }: { icons: any[], color: stri
 // ============================================================================
 
 const getChapterStatus = (idx: number): 'active' | 'locked' | 'completed' => {
-                // Future-proofed for backend progress data
-                return idx === 0 ? 'active' : 'locked';
-              };
+  return idx === 0 ? 'active' : 'locked';
+};
 
 export default function LessonPage() {
   const { activeSubject, currentClassId } = useContext(DashboardContext);
@@ -114,7 +113,7 @@ export default function LessonPage() {
   const [chapters, setChapters] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-
+  // Fallback to 'math' if activeSubject is undefined or not in the dictionary
   const theme = subjectThemes[activeSubject] || subjectThemes['math'];
 
   // FETCH DYNAMIC CHAPTERS FROM BACKEND
@@ -126,7 +125,6 @@ export default function LessonPage() {
         const data = await res.json();
         
         if (res.ok) {
-          // Ensure they are sorted by chapter number for the linear map
           const sortedData = (data || []).sort((a: any, b: any) => a.chapterNumber - b.chapterNumber);
           setChapters(sortedData);
         }
@@ -149,8 +147,6 @@ export default function LessonPage() {
     }
   }, [chapters]);
 
-
-  
   return (
     <div className={`fixed inset-0 w-screen h-screen ${theme.background} overflow-hidden transition-colors duration-500`}>
       
@@ -179,25 +175,21 @@ export default function LessonPage() {
           )}
 
           {chapters.length === 0 ? (
+            // Dynamic Empty State
             <div className="absolute inset-0 flex flex-col items-center justify-center text-stone-500 font-serif">
-              <p className="text-xl mb-2">No chapters found for Class 9 Mathematics.</p>
+              <p className="text-xl mb-2">
+                No chapters found for Class {currentClassId?.replace('c', '')} {activeSubject?.toUpperCase()}.
+              </p>
               <p className="text-sm opacity-60">Add a chapter in your Admin Command Center to see it appear here.</p>
             </div>
           ) : (
-            
-          
-
             chapters.map((chapter: any, index: number) => {
-              // Zig-Zag Layout Logic
               const isEven = index % 2 === 0;
               const zigZagClass = isEven 
                 ? "translate-x-12 lg:translate-x-0 lg:-translate-y-24" 
                 : "-translate-x-12 lg:translate-x-0 lg:translate-y-24";
 
-              // Deterministic Icon Mapping
               const DynamicIcon = theme.floatingIcons[index % theme.floatingIcons.length];
-              
-              // CALL THE HELPER HERE (TS will now respect all 3 states)
               const status = getChapterStatus(index);
 
               return (
@@ -219,7 +211,7 @@ export default function LessonPage() {
                     >
                       <DynamicIcon className={`w-10 h-10 lg:w-14 lg:h-14 ${status === 'locked' ? 'text-stone-300' : theme.text}`} strokeWidth={1.5} />
 
-                     {/* 2. Status Badges */}
+                      {/* Status Badges */}
                       <div className={`absolute -bottom-3 -right-3 h-10 w-10 rounded-full border-4 border-white flex items-center justify-center shadow-lg z-30 ${
                         status === 'active' ? theme.accent : 
                         status === 'completed' ? 'bg-stone-300' : 'bg-stone-200'

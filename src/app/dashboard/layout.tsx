@@ -33,17 +33,17 @@ const LiquidGlassMenu = ({ items, activeItem, setActiveItem, isHorizontal = true
 const ALL_SUBJECTS = {
   math: { id: 'math', label: 'Mathematics' },
   sci: { id: 'sci', label: 'Science' },
-  physics: { id: 'physics', label: 'Physics' },
-  chemistry: { id: 'chemistry', label: 'Chemistry' },
-  biology: { id: 'biology', label: 'Biology' }
+  phy: { id: 'phy', label: 'Physics' },
+  chem: { id: 'chem', label: 'Chemistry' },
+  bio: { id: 'bio', label: 'Biology' }
 };
 
 const CLASS_ROUTING_MAP: Record<string, string[]> = {
   c8: ['math', 'sci'],
   c9: ['math', 'sci'],
   c10: ['math', 'sci'],
-  c11: ['math', 'physics', 'chemistry', 'biology'],
-  c12: ['math', 'physics', 'chemistry', 'biology'],
+  c11: ['math', 'phy', 'chem', 'bio'],
+  c12: ['math', 'phy', 'chem', 'bio'],
 };
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -116,7 +116,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </main>
       </DashboardContext.Provider>
 
-      <nav className="fixed bottom-0 w-full z-50 pointer-events-none px-4 sm:px-6 pb-6 sm:pb-8 pt-10 bg-gradient-to-t from-[#FDFCF8] via-[#FDFCF8]/90 to-transparent">
+      <nav className="fixed bottom-0 w-full z-50 pointer-events-none px-4 sm:px-6 pb-6 sm:pb-8 pt-10 bg-linear-to-t from-[#FDFCF8] via-[#FDFCF8]/90 to-transparent">
         <div className="max-w-md mx-auto pointer-events-auto bg-white/80 backdrop-blur-2xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[2.5rem] flex justify-between items-center px-3 sm:px-4 py-2 sm:py-3 relative">
           {navItems.map((item) => {
             const Icon = item.icon;
