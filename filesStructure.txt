@@ -1,0 +1,118 @@
+src
+├── app
+│   ├── Providers.tsx
+│   ├── admin
+│   │   ├── [classId]
+│   │   │   └── [subjectId]
+│   │   │       └── page.tsx
+│   │   ├── chapter
+│   │   │   └── [chapterId]
+│   │   │       └── page.tsx
+│   │   ├── layout.tsx
+│   │   ├── page.tsx
+│   │   ├── settings
+│   │   │   └── page.tsx
+│   │   └── warehouse
+│   │       └── components
+│   │           ├── ManualUploader.tsx
+│   │           └── WarehouseQueue.tsx
+│   ├── api
+│   │   ├── admin
+│   │   │   ├── r2-presigned
+│   │   │   └── warehouse-sync
+│   │   ├── ai
+│   │   │   └── parse-questions
+│   │   │       └── route.ts
+│   │   ├── auth
+│   │   │   ├── [...nextauth]
+│   │   │   │   └── route.ts
+│   │   │   └── signup
+│   │   │       └── route.ts
+│   │   ├── chat
+│   │   │   └── route.ts
+│   │   ├── content
+│   │   │   ├── asset
+│   │   │   │   └── route.ts
+│   │   │   ├── batch-questions
+│   │   │   │   └── route.ts
+│   │   │   ├── chapter
+│   │   │   │   ├── route.ts
+│   │   │   │   └── summary
+│   │   │   │       └── route.ts
+│   │   │   ├── chapters
+│   │   │   │   └── route.ts
+│   │   │   └── question
+│   │   │       └── route.ts
+│   │   ├── mcp
+│   │   ├── news
+│   │   │   └── route.ts
+│   │   ├── practice
+│   │   │   ├── homework
+│   │   │   │   └── route.ts
+│   │   │   └── recommend
+│   │   │       └── route.ts
+│   │   ├── profile
+│   │   │   └── route.ts
+│   │   ├── upload
+│   │   │   └── route.ts
+│   │   └── user
+│   │       └── profile
+│   │           └── route.ts
+│   ├── dashboard
+│   │   ├── ai
+│   │   │   └── page.tsx
+│   │   ├── explore
+│   │   │   ├── components
+│   │   │   │   ├── Community.tsx
+│   │   │   │   ├── Marketplace.tsx
+│   │   │   │   └── UpdatesFeed.tsx
+│   │   │   └── page.tsx
+│   │   ├── layout.tsx
+│   │   ├── lesson
+│   │   │   └── page.tsx
+│   │   ├── page.tsx
+│   │   ├── practice
+│   │   │   ├── components
+│   │   │   │   ├── HomeworkEngine.tsx
+│   │   │   │   ├── PracticeEngine.tsx
+│   │   │   │   └── QuizArena.tsx
+│   │   │   ├── homework
+│   │   │   │   └── route.ts
+│   │   │   └── page.tsx
+│   │   ├── profile
+│   │   │   └── page.tsx
+│   │   ├── simulation
+│   │   │   └── page.tsx
+│   │   └── template.tsx
+│   ├── favicon.ico
+│   ├── globals.css
+│   ├── layout.tsx
+│   ├── learning
+│   │   └── [slug]
+│   │       └── page.tsx
+│   ├── login
+│   │   └── page.tsx
+│   ├── page.tsx
+│   ├── set-profile
+│   │   └── page.tsx
+│   └── signup
+│       └── page.tsx
+├── components
+│   ├── admin
+│   │   └── QuestionManager.tsx
+│   ├── interactives
+│   └── ui
+├── lib
+│   ├── database.ts
+│   ├── models
+│   │   ├── Asset.ts
+│   │   ├── Chapter.ts
+│   │   ├── ChatHistory.ts
+│   │   ├── Curriculum.ts
+│   │   ├── Question.ts
+│   │   ├── StagingAsset.ts
+│   │   └── User.ts
+│   └── r2-client.ts
+└── middleware.ts
+
+57 directories, 59 files
