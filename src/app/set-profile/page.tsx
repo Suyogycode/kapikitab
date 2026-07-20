@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, ArrowLeft, Check, Sparkles, ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 
 // --- TYPESCRIPT BLUEPRINTS ---
 type Option = {
@@ -62,6 +63,8 @@ const ENTRANCE_EXAMS = [
 
 export default function SetProfile() {
   const router = useRouter(); 
+  const { update } = useSession(); 
+  
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});  
   const [mascotText, setMascotText] = useState("Hello! I'm Kapi. Let's set up your profile for India.");
@@ -165,7 +168,21 @@ export default function SetProfile() {
 
         if (res.ok) {
           setMascotText("All set. Redirecting to dashboard...");
-          setTimeout(() => router.push('/dashboard'), 1000);
+          
+          // FORMAT THE CLASS ID FOR NEXTAUTH
+          const selectedClass = answers['class'];
+          if (selectedClass && typeof selectedClass === 'string') {
+            const formattedClassId = 'c' + selectedClass.replace('Class ', '').trim();
+            
+            // FORCE NEXTAUTH SESSION UPDATE
+            await update({ classId: formattedClassId });
+          }
+
+          // HARD REDIRECT TO DASHBOARD
+          setTimeout(() => {
+            window.location.href = '/dashboard';
+          }, 1000);
+
         } else {
           setMascotText("There was an error saving your profile. Please try again.");
           setIsSaving(false);
