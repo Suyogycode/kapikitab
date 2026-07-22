@@ -15,7 +15,7 @@ import QuestionManager from '@/components/admin/QuestionManager';
 
 // --- TYPES ---
 type Unit = { unitId: string; title: string; order: number; };
-type Chapter = { chapterId: string; classId: string; subjectId: string; chapterNumber: number; title: string; units: Unit[]; };
+type Chapter = { chapterId: string; classId: string; subjectId: string; chapterNumber: number; title: string; summary?: string;  units: Unit[]; };
 type AssetCountSummary = { video_lecture: number; pdf_document: number; diagram: number; react_simulation: number; questionsCount: number; };
 type UnitInventory = Record<string, AssetCountSummary>;
 
@@ -31,7 +31,7 @@ export default function SimplifiedChapterWorkspace() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [expandedUnit, setExpandedUnit] = useState<string | null>(null);
-  
+  const [isSavingSummary, setIsSavingSummary] = useState(false);
   const [panel, setPanel] = useState<{ isOpen: boolean; type: PanelType; unitId: string | null }>({
     isOpen: false, type: null, unitId: null
   });
@@ -99,6 +99,23 @@ export default function SimplifiedChapterWorkspace() {
       setIsSaving(false);
     }
   };
+
+    const handleSaveSummary = async () => {
+      if (!chapter) return;
+      setIsSavingSummary(true);
+      try {
+        await fetch('/api/content/chapter', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(chapter),
+        });
+        await fetchDataSummary();
+      } catch (err) {
+        console.error("Failed to save chapter context summary:", err);
+      } finally {
+        setIsSavingSummary(false);
+      }
+    };
 
 const handleAssetSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
   e.preventDefault();
@@ -228,6 +245,49 @@ const handleAssetSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         <button onClick={handleSaveChanges} disabled={isSaving} className="bg-stone-900 hover:bg-stone-800 text-white px-6 py-2.5 rounded-full text-sm font-medium transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 shrink-0">
           {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}<span>Save Structure</span>
         </button>
+      </div>
+
+            {/* CANONICAL CONTEXT / RAG-LITE SUMMARY CARD */}
+      <div className="mb-8 border border-stone-200 bg-white rounded-2xl p-6 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+          <div className="flex items-center gap-2">
+            <Sparkles size={18} className="text-emerald-600" />
+            <h3 className="text-sm font-semibold text-stone-900">Canonical Chapter Summary (AI Podcast Grounding)</h3>
+          </div>
+          
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400 bg-stone-100 px-2 py-0.5 rounded">
+              RAG-Lite Context
+            </span>
+            
+            {/* DEDICATED SAVE CONTEXT BUTTON */}
+            <button
+              type="button"
+              onClick={handleSaveSummary}
+              disabled={isSavingSummary}
+              className="bg-emerald-700 hover:bg-emerald-800 text-white px-3.5 py-1.5 rounded-xl text-xs font-medium transition-colors flex items-center gap-1.5 shadow-sm disabled:opacity-50"
+            >
+              {isSavingSummary ? (
+                <Loader2 size={13} className="animate-spin" />
+              ) : (
+                <Save size={13} />
+              )}
+              <span>{isSavingSummary ? 'Saving...' : 'Save Context'}</span>
+            </button>
+          </div>
+        </div>
+
+        <p className="text-xs text-stone-500 mb-4">
+          This summary is fed directly to Groq during podcast generation. Keep it targeted to your grade level to prevent college-level concept hallucinations.
+        </p>
+
+        <textarea
+          rows={5}
+          value={chapter.summary || ''}
+          onChange={(e) => setChapter({ ...chapter, summary: e.target.value })}
+          placeholder="Write the core grade-level concepts, key formulas, and real-world examples here..."
+          className="w-full bg-stone-50 border border-stone-200 rounded-xl p-4 text-sm text-stone-800 placeholder-stone-400 focus:outline-none focus:border-emerald-500 font-sans leading-relaxed transition-colors resize-y"
+        />
       </div>
 
       {/* 2. UNITS MAPPING */}

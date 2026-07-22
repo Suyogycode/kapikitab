@@ -9,6 +9,9 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
+// 1. IMPORT THE NEW AUDIO PLAYER COMPONENT
+import AudioOverviewPlayer from '@/app/learning/AudioOverviewPlayer';
+
 export default function DynamicLearningWorkspace() {
   const params = useParams();
   const slug = params.slug as string;
@@ -130,7 +133,8 @@ export default function DynamicLearningWorkspace() {
         <div className="w-10 sm:w-12" />
       </div>
 
-      <div className="w-full flex flex-col items-center pt-12 sm:pt-20 px-4 sm:px-6 pb-16">
+      {/* HEADER SECTION */}
+      <div className="w-full flex flex-col items-center pt-12 sm:pt-20 px-4 sm:px-6 pb-12">
         <div className="max-w-4xl w-full text-center">
           <span className="text-emerald-600 font-bold tracking-widest text-xs sm:text-sm uppercase mb-4 block">
             Chapter {String(chapter.chapterNumber).padStart(2, '0')}
@@ -139,6 +143,14 @@ export default function DynamicLearningWorkspace() {
             {chapter.title}
           </h1>
         </div>
+      </div>
+
+      {/* 2. MOUNT THE AUDIO OVERVIEW PLAYER HERE */}
+      <div className="w-full px-4 sm:px-6 mb-16">
+        <AudioOverviewPlayer 
+          chapterId={chapter.chapterId} 
+          chapterTitle={chapter.title} 
+        />
       </div>
 
       <div className="max-w-4xl mx-auto w-full px-4 sm:px-6 pb-32 space-y-24">
@@ -199,19 +211,14 @@ export default function DynamicLearningWorkspace() {
                 {documentAssets.length > 0 && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {documentAssets.map((doc, idx) => {
-                      
-                      // Handle the URL dynamically. Since we saved it directly as a string in the last step, 
-                      // we check if doc.content is a string. If you have legacy data, it falls back to the object structure.
                       const assetUrl = typeof doc.content === 'string' 
                         ? doc.content 
                         : doc.content?.url || doc.content?.imageUrl || doc.content?.fileUrl;
 
-                      // 1. RENDER ACTUAL IMAGES FOR DIAGRAMS
                       if (doc.type === 'diagram') {
                         return (
                           <div key={idx} className="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden flex flex-col group">
                             <div className="w-full h-48 bg-stone-100 relative overflow-hidden">
-                              {/* This img tag fetches your public Cloudflare R2 URL */}
                               <img 
                                 src={assetUrl} 
                                 alt={doc.title} 
@@ -231,7 +238,6 @@ export default function DynamicLearningWorkspace() {
                         );
                       }
 
-                      // 2. RENDER CLICKABLE CARDS FOR PDFS
                       return (
                         <a key={idx} href={assetUrl} target="_blank" rel="noopener noreferrer" className="block">
                           <div className="bg-white p-6 rounded-2xl shadow-sm border border-stone-200 hover:shadow-md hover:border-blue-200 transition-all group flex items-center space-x-4 h-full">
@@ -272,7 +278,7 @@ export default function DynamicLearningWorkspace() {
                       </div>
                     </div>
                     
-                    <div className="min-h-[250px]">
+                    <div className="min-h-62.5">
                       <AnimatePresence mode="wait">
                         <motion.div 
                           key={currentQuestion.questionId}
@@ -329,7 +335,6 @@ export default function DynamicLearningWorkspace() {
                             </div>
                           )}
 
-                          {/* --- NEW EXPLANATION UI --- */}
                           {isAnswered && currentQuestion.explanation && (
                             <motion.div
                               initial={{ opacity: 0, y: 10, height: 0 }}
