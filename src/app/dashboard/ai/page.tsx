@@ -12,30 +12,30 @@ type Message = {
   image?: string; 
 };
 
-// --- KAPI AVATAR COMPONENT ---
-// Adapted from the SetProfile page to serve as a sleek chat avatar
+// --- REFINED KAPI AVATAR ---
+// Muted the colors to earthy greens and warm creams for a calming, sophisticated look
 const KapiAvatar = ({ isTyping = false, className = "w-8 h-8" }: { isTyping?: boolean, className?: string }) => (
   <motion.svg 
     viewBox="0 0 200 200" 
     className={`drop-shadow-sm ${className}`}
   >
-    <rect x="40" y="60" width="120" height="100" rx="40" fill="#0d3827" /> 
-    <rect x="55" y="80" width="90" height="60" rx="20" fill="#FAF9F5" />
+    <rect x="40" y="60" width="120" height="100" rx="35" fill="#4A5D4E" /> 
+    <rect x="55" y="80" width="90" height="60" rx="18" fill="#FDFCF8" />
     
-    <motion.circle cx="75" cy="110" r="8" fill="#1c1917" 
+    <motion.circle cx="75" cy="110" r="7" fill="#53594D" 
       animate={isTyping ? { scaleY: [1, 0.2, 1] } : { scaleY: 1 }} 
       transition={{ duration: 0.4, repeat: isTyping ? Infinity : 0, repeatDelay: 0.8 }}
     />
-    <motion.circle cx="125" cy="110" r="8" fill="#1c1917" 
+    <motion.circle cx="125" cy="110" r="7" fill="#53594D" 
       animate={isTyping ? { scaleY: [1, 0.2, 1] } : { scaleY: 1 }} 
       transition={{ duration: 0.4, repeat: isTyping ? Infinity : 0, repeatDelay: 0.8 }}
     />
     
-    <rect x="60" y="95" width="30" height="30" rx="10" fill="none" stroke="#d97706" strokeWidth="4" />
-    <rect x="110" y="95" width="30" height="30" rx="10" fill="none" stroke="#d97706" strokeWidth="4" />
-    <line x1="90" y1="110" x2="110" y2="110" stroke="#d97706" strokeWidth="4" />
-    <line x1="100" y1="60" x2="100" y2="30" stroke="#0d3827" strokeWidth="6" strokeLinecap="round" />
-    <circle cx="100" cy="25" r="8" fill="#d97706" />
+    <rect x="60" y="95" width="30" height="30" rx="10" fill="none" stroke="#8A795D" strokeWidth="3" />
+    <rect x="110" y="95" width="30" height="30" rx="10" fill="none" stroke="#8A795D" strokeWidth="3" />
+    <line x1="90" y1="110" x2="110" y2="110" stroke="#8A795D" strokeWidth="3" />
+    <line x1="100" y1="60" x2="100" y2="35" stroke="#4A5D4E" strokeWidth="5" strokeLinecap="round" />
+    <circle cx="100" cy="30" r="7" fill="#8A795D" />
   </motion.svg>
 );
 
@@ -44,7 +44,7 @@ export default function AiPage() {
     {
       id: 1,
       sender: 'ai',
-      text: "Hello! I'm Kapi, your personal tutor. You can ask me questions or upload images of your math problems, and we will untangle them together."
+      text: "Hello. I'm Kapi, your personal tutor.\n\nYou can ask me questions, explore complex topics, or upload images of your math problems, and we will untangle them together."
     }
   ]);
   const [inputValue, setInputValue] = useState("");
@@ -134,9 +134,8 @@ export default function AiPage() {
   return (
     <div className="h-full w-full flex flex-col relative bg-[#FDFCF8]">
       
-      {/* --- SCROLLABLE CHAT AREA (Document Style) --- */}
-      <div className="flex-1 overflow-y-auto no-scrollbar w-full pt-8 pb-40">
-        <div className="max-w-3xl mx-auto flex flex-col space-y-6 px-4 sm:px-6">
+      <div className="flex-1 overflow-y-auto no-scrollbar w-full pt-12 pb-48">
+        <div className="max-w-2xl mx-auto flex flex-col space-y-12 px-6 sm:px-8">
           <AnimatePresence>
             {messages.map((msg) => {
               const isAi = msg.sender === 'ai';
@@ -146,32 +145,31 @@ export default function AiPage() {
                   key={msg.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="w-full flex gap-4 group"
+                  transition={{ duration: 0.4, ease: "easeOut" }}
+                  className="w-full flex gap-5 sm:gap-6 group"
                 >
-                  {/* Avatar */}
-                  <div className="shrink-0 pt-1">
+                  <div className="shrink-0 pt-0.5">
                     {isAi ? (
-                      <KapiAvatar className="w-8 h-8 sm:w-10 sm:h-10" />
+                      <KapiAvatar className="w-8 h-8 sm:w-9 sm:h-9" />
                     ) : (
-                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-stone-200 border border-stone-300 flex items-center justify-center text-stone-600 shadow-sm">
-                        <User size={18} />
+                      <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white border border-stone-200 flex items-center justify-center text-stone-400 shadow-[0_2px_10px_rgb(0,0,0,0.02)]">
+                        <User size={16} strokeWidth={1.5} />
                       </div>
                     )}
                   </div>
 
-                  {/* Message Content */}
-                  <div className="flex-1 space-y-2 min-w-0">
-                    <div className="font-medium text-sm text-stone-900 tracking-wide">
+                  <div className="flex-1 space-y-1.5 min-w-0">
+                    <div className="font-serif font-medium text-[13px] sm:text-sm text-stone-800 tracking-wide">
                       {isAi ? 'Kapi' : 'You'}
                     </div>
                     
                     {msg.image && (
-                      <div className="relative w-48 h-48 sm:w-64 sm:h-64 mb-4 rounded-2xl overflow-hidden border border-stone-200 shadow-sm">
+                      <div className="relative w-48 h-48 sm:w-64 sm:h-64 mt-3 mb-4 rounded-2xl overflow-hidden border border-stone-100 shadow-sm">
                         <Image src={msg.image} alt="Uploaded reference" fill className="object-cover" />
                       </div>
                     )}
                     
-                    <p className="text-[15px] sm:text-base text-stone-700 leading-relaxed font-light whitespace-pre-wrap">
+                    <p className="text-[15px] sm:text-base text-stone-600 leading-relaxed sm:leading-[1.8] font-light whitespace-pre-wrap tracking-wide">
                       {msg.text}
                     </p>
                   </div>
@@ -180,18 +178,17 @@ export default function AiPage() {
             })}
           </AnimatePresence>
 
-          {/* Typing Indicator */}
           {isTyping && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="w-full flex gap-4">
-              <div className="shrink-0 pt-1">
-                <KapiAvatar isTyping={true} className="w-8 h-8 sm:w-10 sm:h-10" />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="w-full flex gap-5 sm:gap-6">
+              <div className="shrink-0 pt-0.5">
+                <KapiAvatar isTyping={true} className="w-8 h-8 sm:w-9 sm:h-9" />
               </div>
-              <div className="flex-1 space-y-2">
-                <div className="font-medium text-sm text-stone-900 tracking-wide">Kapi</div>
-                <div className="flex items-center space-x-1.5 h-6">
-                  <motion.div animate={{ y: [0, -4, 0] }} transition={{ repeat: Infinity, duration: 0.8, ease: "easeInOut" }} className="w-1.5 h-1.5 bg-emerald-400 rounded-full" />
-                  <motion.div animate={{ y: [0, -4, 0] }} transition={{ repeat: Infinity, duration: 0.8, delay: 0.15, ease: "easeInOut" }} className="w-1.5 h-1.5 bg-emerald-400 rounded-full" />
-                  <motion.div animate={{ y: [0, -4, 0] }} transition={{ repeat: Infinity, duration: 0.8, delay: 0.3, ease: "easeInOut" }} className="w-1.5 h-1.5 bg-emerald-400 rounded-full" />
+              <div className="flex-1 space-y-1.5">
+                <div className="font-serif font-medium text-[13px] sm:text-sm text-stone-800 tracking-wide">Kapi</div>
+                <div className="flex items-center space-x-1.5 h-7">
+                  <motion.div animate={{ y: [0, -3, 0], opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 1, ease: "easeInOut" }} className="w-1.5 h-1.5 bg-[#8A795D] rounded-full" />
+                  <motion.div animate={{ y: [0, -3, 0], opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 1, delay: 0.2, ease: "easeInOut" }} className="w-1.5 h-1.5 bg-[#8A795D] rounded-full" />
+                  <motion.div animate={{ y: [0, -3, 0], opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 1, delay: 0.4, ease: "easeInOut" }} className="w-1.5 h-1.5 bg-[#8A795D] rounded-full" />
                 </div>
               </div>
             </motion.div>
@@ -201,27 +198,25 @@ export default function AiPage() {
         </div>
       </div>
 
-      {/* --- FLOATING COMMAND CENTER INPUT --- */}
-      <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-[#FDFCF8] via-[#FDFCF8]/95 to-transparent pt-12 pb-6 px-4 sm:px-8 pointer-events-none flex flex-col items-center z-20">
+      <div className="absolute bottom-0 left-0 w-full bg-linear-to-t from-[#FDFCF8] via-[#FDFCF8]/95 to-transparent pt-16 pb-8 px-4 sm:px-8 pointer-events-none flex flex-col items-center z-20">
         
-        <div className="w-full max-w-3xl pointer-events-auto relative">
+        <div className="w-full max-w-2xl pointer-events-auto relative">
           
-          {/* Image Preview Thumbnail */}
           <AnimatePresence>
             {selectedImage && (
               <motion.div 
                 initial={{ opacity: 0, y: 10, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                className="absolute bottom-full mb-4 left-0 bg-white p-2 rounded-2xl shadow-xl border border-stone-200 z-30"
+                className="absolute bottom-full mb-4 left-0 bg-white p-2 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-stone-100 z-30"
               >
                 <button 
                   onClick={() => { setSelectedImage(null); setMimeType(null); }}
-                  className="absolute -top-2 -right-2 bg-stone-900 text-white p-1 rounded-full hover:scale-110 transition-transform shadow-md"
+                  className="absolute -top-2 -right-2 bg-stone-800 text-white p-1 rounded-full hover:scale-105 transition-transform shadow-md"
                 >
-                  <X size={14} />
+                  <X size={12} strokeWidth={2} />
                 </button>
-                <div className="relative w-20 h-20 rounded-xl overflow-hidden">
+                <div className="relative w-16 h-16 rounded-xl overflow-hidden">
                   <Image src={selectedImage} alt="Preview" fill className="object-cover" />
                 </div>
               </motion.div>
@@ -230,7 +225,7 @@ export default function AiPage() {
 
           <form 
             onSubmit={handleSend}
-            className="w-full bg-white border border-stone-200 shadow-[0_4px_30px_rgb(0,0,0,0.06)] rounded-2xl sm:rounded-3xl p-1.5 sm:p-2 flex items-center transition-shadow focus-within:ring-2 focus-within:ring-emerald-500/20"
+            className="w-full bg-[#FCFBFA] border border-stone-200/60 shadow-[0_4px_20px_rgb(0,0,0,0.03)] rounded-[2rem] p-1.5 sm:p-2 flex items-center transition-all duration-300 focus-within:shadow-[0_8px_30px_rgb(0,0,0,0.06)] focus-within:border-stone-300/50"
           >
             <input 
               type="file" 
@@ -243,9 +238,9 @@ export default function AiPage() {
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl text-stone-400 hover:text-stone-700 hover:bg-stone-50 transition-colors shrink-0"
+              className="p-3 sm:p-3.5 rounded-full text-stone-400 hover:text-stone-600 hover:bg-stone-100/50 transition-colors shrink-0"
             >
-              <Paperclip size={20} />
+              <Paperclip size={18} strokeWidth={1.5} />
             </button>
 
             <input
@@ -253,26 +248,26 @@ export default function AiPage() {
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               placeholder="Message Kapi..."
-              className="flex-1 bg-transparent text-stone-800 px-3 sm:px-4 py-2 sm:py-3 focus:outline-none placeholder:text-stone-400 text-[15px] sm:text-base"
+              className="flex-1 bg-transparent text-stone-700 px-3 sm:px-4 py-3 sm:py-3.5 focus:outline-none placeholder:text-stone-300 text-[15px] sm:text-[15px] font-light tracking-wide"
               autoComplete="off"
             />
             
             <button
               type="submit"
               disabled={!canSend}
-              className={`p-2.5 sm:p-3 rounded-xl sm:rounded-2xl shrink-0 transition-all ${
+              className={`p-3 sm:p-3.5 rounded-full shrink-0 transition-all duration-300 ${
                 canSend 
-                  ? 'bg-stone-900 text-white shadow-md hover:bg-stone-800' 
-                  : 'bg-stone-50 text-stone-300 cursor-not-allowed'
+                  ? 'bg-[#4A5D4E] text-white shadow-sm hover:bg-[#3E4F42] hover:-translate-y-0.5' 
+                  : 'bg-stone-100/50 text-stone-300 cursor-not-allowed'
               }`}
             >
-              <Send size={18} className={canSend ? "translate-x-0.5 -translate-y-0.5" : ""} />
+              <Send size={16} strokeWidth={1.5} className={canSend ? "translate-x-0.5 -translate-y-0.5" : ""} />
             </button>
           </form>
           
-          <div className="text-center mt-3 mb-1 sm:mb-0">
-            <span className="text-[10px] sm:text-[11px] text-stone-400 font-medium tracking-wide uppercase">
-              Kapi can make mistakes. Verify important information.
+          <div className="text-center mt-4">
+            <span className="text-[10px] text-stone-400/80 font-light tracking-[0.05em]">
+              Kapi can make mistakes. Please verify important information.
             </span>
           </div>
         </div>
