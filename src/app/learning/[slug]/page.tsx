@@ -5,11 +5,12 @@ import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion'
 import { useParams } from 'next/navigation'; 
 import { 
   ArrowLeft, PlayCircle, Beaker, 
-  CheckCircle2, XCircle, ArrowRight, FileText, ImageIcon, Loader2, ChevronLeft, ChevronRight, SkipForward
+  CheckCircle2, XCircle, FileText, ImageIcon, Loader2, ChevronLeft, ChevronRight, SkipForward
 } from 'lucide-react';
 import Link from 'next/link';
 
-// 1. IMPORT THE NEW AUDIO PLAYER COMPONENT
+// Lab Renderer & Audio Player Imports
+import LabRenderer from '@/components/interactives/LabRenderer';
 import AudioOverviewPlayer from '@/app/learning/AudioOverviewPlayer';
 
 export default function DynamicLearningWorkspace() {
@@ -108,6 +109,7 @@ export default function DynamicLearningWorkspace() {
   return (
     <motion.div className="relative w-full min-h-screen transition-colors duration-200 text-stone-800" style={{ backgroundColor }}>
       
+      {/* STICKY NAVIGATION BAR */}
       <div className="sticky top-0 left-0 w-full p-4 sm:p-6 flex justify-between items-start z-50 pointer-events-none">
         <Link href="/dashboard/lesson" className="pointer-events-auto">
           <button className="h-10 w-10 sm:h-12 sm:w-12 rounded-full flex items-center justify-center backdrop-blur-xl bg-white/50 text-stone-800 border border-stone-200 hover:scale-105 transition-all shadow-sm">
@@ -145,7 +147,7 @@ export default function DynamicLearningWorkspace() {
         </div>
       </div>
 
-      {/* 2. MOUNT THE AUDIO OVERVIEW PLAYER HERE */}
+      {/* AUDIO OVERVIEW PLAYER */}
       <div className="w-full px-4 sm:px-6 mb-16">
         <AudioOverviewPlayer 
           chapterId={chapter.chapterId} 
@@ -174,6 +176,11 @@ export default function DynamicLearningWorkspace() {
               : currentQuestion.correctAnswers?.includes(answeredValue)
           );
 
+          // Extract componentRef from labAsset content payload
+          const labComponentRef = labAsset 
+            ? (typeof labAsset.content === 'object' ? labAsset.content?.componentRef : labAsset.content)
+            : null;
+
           return (
             <div key={unit.unitId} id={`unit-${unit.unitId}`} className="scroll-mt-32">
               
@@ -186,6 +193,7 @@ export default function DynamicLearningWorkspace() {
 
               <div className="space-y-12">
                 
+                {/* 1. VIDEO LAYER */}
                 {videoAsset && (
                   <div className="w-full aspect-video bg-black rounded-2xl overflow-hidden shadow-xl border border-stone-200">
                     {videoAsset.content?.videoUrl ? (
@@ -199,15 +207,24 @@ export default function DynamicLearningWorkspace() {
                   </div>
                 )}
 
+                {/* 2. DYNAMIC INTERACTIVE LAB RENDERER */}
                 {labAsset && (
-                  <div className="w-full h-[50vh] bg-white rounded-2xl shadow-sm border border-stone-200 flex flex-col items-center justify-center relative overflow-hidden">
-                     <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'radial-gradient(#1c1917 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
-                     <Beaker size={40} className="text-amber-500 mb-4 z-10" />
-                     <h3 className="text-xl font-serif z-10 text-stone-800">{labAsset.title}</h3>
-                     <p className="text-sm text-stone-500 font-mono mt-2 z-10">Ref: {labAsset.content?.componentRef}</p>
+                  <div className="w-full my-8">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Beaker size={20} className="text-amber-500" />
+                      <h3 className="text-xl font-serif text-stone-900">{labAsset.title}</h3>
+                    </div>
+                    {labComponentRef ? (
+                      <LabRenderer componentRef={labComponentRef} />
+                    ) : (
+                      <div className="p-6 bg-amber-50 border border-amber-200 rounded-2xl text-amber-800 text-sm">
+                        No <code>componentRef</code> pointer found for this lab asset.
+                      </div>
+                    )}
                   </div>
                 )}
 
+                {/* 3. DIAGRAMS & PDF DOCUMENTS */}
                 {documentAssets.length > 0 && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {documentAssets.map((doc, idx) => {
@@ -255,6 +272,7 @@ export default function DynamicLearningWorkspace() {
                   </div>
                 )}
 
+                {/* 4. PRACTICE QUESTION BANK */}
                 {unitQuestions.length > 0 && currentQuestion && (
                   <div className="bg-white border border-stone-200 rounded-3xl p-6 sm:p-10 shadow-sm relative overflow-hidden">
                     

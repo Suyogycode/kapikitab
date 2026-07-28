@@ -127,67 +127,53 @@ export default function SimplifiedChapterWorkspace() {
         : url; // Fallback to original if parsing fails
     };
 
+// Inside src/app/admin/chapter/[chapterId]/page.tsx (SimplifiedChapterWorkspace)
+
 const handleAssetSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
   e.preventDefault();
   setIsProcessing(true);
   
   const formData = new FormData(e.currentTarget);
   const file = formData.get('fileUpload') as File; 
-  const youtubeUrl = formData.get('youtubeUrl') as string; // NEW: Extract YouTube URL
-  
+  const youtubeUrl = formData.get('youtubeUrl') as string;
+  const componentRef = formData.get('componentRef') as string; // Extract Lab Component Pointer
+
   try {
     const title = (formData.get('assetTitle') || formData.get('labTitle')) as string;
     let contentPayload: any = {};
     let uploadedUrl = '';
 
-    // NEW LOGIC: Determine if we are uploading a file or saving a YouTube link
+    // 1. Process standard media uploads (Video, PDF, Diagrams)
     if (file && file.size > 0) {
-      // 1. Route based on active panel type ('video' -> Bunny Stream, else Cloudflare R2)
       const uploadType = panel.type === 'video' ? 'video' : 'image';
-
       const uploadFormData = new FormData();
       uploadFormData.append("file", file);
       uploadFormData.append("type", uploadType);
 
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: uploadFormData, 
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to authorize or execute upload.');
-      }
+      const response = await fetch('/api/upload', { method: 'POST', body: uploadFormData });
+      if (!response.ok) throw new Error('Failed to authorize or execute upload.');
 
       const data = await response.json();
-
       if (data.isPresigned) {
-        // Direct stream to Cloudflare R2 for images/PDFs
         const uploadRes = await fetch(data.uploadUrl, {
           method: 'PUT',
           body: file,
           headers: { 'Content-Type': file.type },
         });
-
-        if (!uploadRes.ok) {
-          throw new Error("Direct-to-R2 streaming failed.");
-        }
+        if (!uploadRes.ok) throw new Error("Direct-to-R2 streaming failed.");
         uploadedUrl = data.url;
       } else {
-        // Bunny Stream returns direct embed URL
-        uploadedUrl = data.url; // Use data.playUrl if you applied the previous fix
+        uploadedUrl = data.url;
       }
     } else if (youtubeUrl && youtubeUrl.trim() !== '') {
-      // FIX: It's a YouTube Link! Automatically convert it to an iframe-safe embed URL.
       uploadedUrl = getYouTubeEmbedUrl(youtubeUrl.trim());
-      
     } else if (panel.type !== 'lab') {
-      // Safety check if neither file nor YouTube link was provided
       alert("Please upload a file or provide a YouTube URL.");
       setIsProcessing(false);
       return;
     }
 
-    // 2. Map Panel Types to MongoDB Enum
+    // 2. Map Panel Types to MongoDB Schema Enums
     const typeMapping: Record<string, string> = {
       'video': 'video_lecture',
       'pdf': 'pdf_document',
@@ -198,10 +184,14 @@ const handleAssetSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     const schemaCompliantType = panel.type ? typeMapping[panel.type] : 'diagram';
     const semanticAssetId = `ast-${chapterId}-${panel.unitId}-${Date.now()}`;
 
-    // 3. Format Content payload dynamically based on schema requirements
-    const finalContent = schemaCompliantType === 'video_lecture' 
-      ? { videoUrl: uploadedUrl } 
-      : uploadedUrl;
+    // 3. Format Content payload dynamically based on type
+    let finalContent: any = uploadedUrl;
+    if (schemaCompliantType === 'video_lecture') {
+      finalContent = { videoUrl: uploadedUrl };
+    } else if (schemaCompliantType === 'react_simulation') {
+      // Store the React component pointer key for dynamic imports
+      finalContent = { componentRef: componentRef.trim() };
+    }
 
     contentPayload = {
       assetId: semanticAssetId,
@@ -220,13 +210,8 @@ const handleAssetSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
       body: JSON.stringify(contentPayload),
     });
 
-    if (!dbResponse.ok) {
-      const errData = await dbResponse.json();
-      console.error("Backend DB Error:", errData);
-      throw new Error('Database transaction failed.');
-    }
+    if (!dbResponse.ok) throw new Error('Database transaction failed.');
 
-    // Reset panel and refresh inventory counts
     setPanel({ isOpen: false, type: null, unitId: null });
     await fetchDataSummary();
     
