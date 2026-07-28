@@ -1,4 +1,3 @@
-// src/components/interactives/XRViewer.tsx
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -21,8 +20,12 @@ export default function XRViewer({ src, alt }: XRViewerProps) {
   const [isEngineReady, setIsEngineReady] = useState(false);
 
   useEffect(() => {
+    // Dynamically import the heavy WebGL library only on the client
+    // and explicitly wait for it to resolve before rendering the tag.
     import('@google/model-viewer')
-      .then(() => setIsEngineReady(true))
+      .then(() => {
+        setIsEngineReady(true);
+      })
       .catch((err) => console.error("Failed to boot WebXR Engine:", err));
   }, []);
 
@@ -44,16 +47,16 @@ export default function XRViewer({ src, alt }: XRViewerProps) {
         camera-controls
         auto-rotate
         ar
-        ar-modes="webxr scene-viewer quick-look"
+        ar-modes="webxr scene-viewer quick-look fallback"
         shadow-intensity="1"
         exposure="1"
         environment-image="neutral"
         style={{ width: '100%', height: '100%', outline: 'none', backgroundColor: 'transparent' }}
       >
-        {/* HIDE ON DESKTOP: md:hidden */}
+        {/* Removed md:hidden so the AR/Webcam feature is accessible everywhere */}
         <button
           slot="ar-button"
-          className="md:hidden absolute bottom-6 right-6 bg-white text-stone-900 px-6 py-3 rounded-full text-sm font-bold tracking-wide shadow-xl border border-stone-200 hover:scale-105 transition-transform"
+          className="absolute bottom-6 right-6 bg-white text-stone-900 px-6 py-3 rounded-full text-sm font-bold tracking-wide shadow-xl border border-stone-200 hover:scale-105 transition-transform"
         >
           View in Space
         </button>
