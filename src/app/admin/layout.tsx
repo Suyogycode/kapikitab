@@ -3,16 +3,17 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Settings, LogOut, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Settings, LogOut, Menu, X, Box } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Removed obsolete routes to prevent 404s and clean up the UI
+  // Added the 3D Graphics route to the sidebar
   const navItems = [
     { name: 'Curriculum Hub', href: '/admin', icon: LayoutDashboard },
+    { name: '3D Graphics', href: '/admin/graphics', icon: Box },
     { name: 'Settings', href: '/admin/settings', icon: Settings },
   ];
 
@@ -27,7 +28,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </button>
       </div>
 
-      {/* SIDEBAR (Desktop & Mobile) - Fixed height and scroll issues */}
+      {/* SIDEBAR */}
       <aside className={`
         fixed lg:sticky top-0 left-0 h-screen w-64 bg-stone-900 text-stone-300 z-40 transform transition-transform duration-300 ease-in-out flex flex-col shadow-2xl lg:shadow-none overflow-y-auto
         ${isMobileMenuOpen ? 'translate-x-0 pt-16' : '-translate-x-full lg:translate-x-0'}
@@ -39,7 +40,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         <nav className="flex-1 px-4 mt-6 space-y-2">
           {navItems.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
             const Icon = item.icon;
             
             return (
@@ -75,10 +76,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* MOBILE OVERLAY */}
       {isMobileMenuOpen && (
-        <div 
-          className="fixed inset-0 bg-black/40 z-30 lg:hidden backdrop-blur-sm"
-          onClick={() => setIsMobileMenuOpen(false)}
-        />
+        <div className="fixed inset-0 bg-black/40 z-30 lg:hidden backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)} />
       )}
     </div>
   );
