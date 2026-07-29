@@ -8,13 +8,17 @@ import { Loader2 } from 'lucide-react';
 
 // 1. The 3D-Exclusive Registry (Completely separate from 2D labs)
 const graphicRegistry: Record<string, React.ComponentType<any>> = {
-  'InteractiveBrain': dynamic(() => import('.//3d-wrappers/InteractiveBrain'), {
+  'InteractiveBrain': dynamic(() => import('./3d-wrappers/InteractiveBrain'), {
     loading: () => <Loader2 className="animate-spin text-stone-500 m-auto" size={24} />
   }),
-  'RocketLaunch3D': dynamic(() => import('.//3d-wrappers/RocketLaunch3D'), {
+  'RocketLaunch3D': dynamic(() => import('./3d-wrappers/RocketLaunch3D'), {
     loading: () => <Loader2 className="animate-spin text-stone-500 m-auto" size={24} />
   }),
-  'InteractiveDoll': dynamic(() => import('.//3d-wrappers/InteractiveDoll'), {
+  'InteractiveDoll': dynamic(() => import('./3d-wrappers/InteractiveDoll'), {
+    loading: () => <Loader2 className="animate-spin text-stone-500 m-auto" size={24} />
+  }),
+  // ADD THE WOLF HERE
+  'InteractiveWolf': dynamic(() => import('./3d-wrappers/InteractiveWolf'), {
     loading: () => <Loader2 className="animate-spin text-stone-500 m-auto" size={24} />
   }),
 };

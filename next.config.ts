@@ -5,4 +5,8 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
 };
 
+module.exports = {
+  allowedDevOrigins: ['suspect-tabloid-compel.ngrok-free.dev'],
+}
+
 export default nextConfig;

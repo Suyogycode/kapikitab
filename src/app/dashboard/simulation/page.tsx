@@ -5,6 +5,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Maximize, Minimize, Loader2, Sparkles, ArrowRight, Eye } from 'lucide-react';
 import XRViewer from '@/components/interactives/XRViewer';
+import GraphicRenderer from '@/components/interactives/GraphicRenderer';
 
 type GraphicAsset = {
   _id: string;
@@ -137,14 +138,18 @@ export default function SimulationPage() {
           </AnimatePresence>
         </div>
 
-        {/* Right Side: LIVE WEBXR MODEL VIEWER */}
-        {/* FIXED: Uses flex-1 to claim all remaining screen space when isolated */}
+{/* Right Side: LIVE WEBXR MODEL VIEWER */}
         <div className={`relative z-20 flex items-center justify-center cursor-grab active:cursor-grabbing transition-all duration-700 ease-in-out ${
           isIsolated ? 'w-full h-full flex-1' : 'w-full md:w-2/3 h-[400px] md:h-full'
         }`}>
-          <XRViewer src={activeSim.modelUrl} alt={activeSim.title} isFullscreen={isFullscreen} />
           
-          {/* NEW: Panning & Zooming Hint Toast */}
+          {/* THE FIX: Replaced XRViewer with GraphicRenderer */}
+          <GraphicRenderer 
+            activeSim={activeSim} 
+            isFullscreen={isFullscreen} 
+          />
+          
+          {/* Panning & Zooming Hint Toast */}
           <AnimatePresence>
             {isIsolated && (
               <motion.div

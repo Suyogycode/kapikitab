@@ -15,7 +15,7 @@ interface XRViewerProps {
   src: string;
   alt: string;
   isFullscreen?: boolean;
-  animationName?: string; // NEW: Allows React to trigger 3D animations
+  animationName?: string; 
 }
 
 export default function XRViewer({ src, alt, isFullscreen = false, animationName }: XRViewerProps) {
@@ -43,8 +43,9 @@ export default function XRViewer({ src, alt, isFullscreen = false, animationName
         src={src}
         alt={alt}
         camera-controls
-        auto-rotate={!animationName ? "true" : undefined} // Stop auto-rotate if interacting
-        animation-name={animationName} // NEW: Links React state to the 3D skeleton
+        auto-rotate={!animationName ? "true" : undefined} 
+        animation-name={animationName} 
+        autoplay /* THE FIX: Tells the 3D engine to actually play the track! */
         ar
         ar-modes="webxr scene-viewer quick-look fallback"
         shadow-intensity="1"
