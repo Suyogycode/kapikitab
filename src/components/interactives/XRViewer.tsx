@@ -1,4 +1,3 @@
-// src/components/interactives/XRViewer.tsx
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -15,10 +14,11 @@ declare global {
 interface XRViewerProps {
   src: string;
   alt: string;
-  isFullscreen?: boolean; // Added new prop
+  isFullscreen?: boolean;
+  animationName?: string; // NEW: Allows React to trigger 3D animations
 }
 
-export default function XRViewer({ src, alt, isFullscreen = false }: XRViewerProps) {
+export default function XRViewer({ src, alt, isFullscreen = false, animationName }: XRViewerProps) {
   const [isEngineReady, setIsEngineReady] = useState(false);
 
   useEffect(() => {
@@ -43,7 +43,8 @@ export default function XRViewer({ src, alt, isFullscreen = false }: XRViewerPro
         src={src}
         alt={alt}
         camera-controls
-        auto-rotate
+        auto-rotate={!animationName ? "true" : undefined} // Stop auto-rotate if interacting
+        animation-name={animationName} // NEW: Links React state to the 3D skeleton
         ar
         ar-modes="webxr scene-viewer quick-look fallback"
         shadow-intensity="1"
@@ -51,11 +52,10 @@ export default function XRViewer({ src, alt, isFullscreen = false }: XRViewerPro
         environment-image="neutral"
         style={{ width: '100%', height: '100%', outline: 'none', backgroundColor: 'transparent' }}
       >
-        {/* Button logic: Hides on PC (md:hidden) AND hides when in fullscreen mode */}
         <button
           slot="ar-button"
           className={`absolute bottom-6 right-6 bg-white text-stone-900 px-6 py-3 rounded-full text-sm font-bold tracking-wide shadow-xl border border-stone-200 hover:scale-105 transition-transform ${
-            isFullscreen ? 'hidden' : 'flex md:hidden'
+            isFullscreen ? 'hidden' : 'flex'
           }`}
         >
           View in Space

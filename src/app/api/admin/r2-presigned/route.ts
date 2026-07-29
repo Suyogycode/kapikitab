@@ -6,11 +6,13 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 // Initialize the S3 Client pointed at Cloudflare's edge
 const S3 = new S3Client({
   region: 'auto',
-  endpoint: `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  // FIXED: Now matches your .env file exactly (R2_ACCOUNT_ID)
+  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
   credentials: {
     accessKeyId: process.env.R2_ACCESS_KEY_ID!,
     secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
   },
+  forcePathStyle: true, 
 });
 
 export async function POST(req: Request) {
@@ -25,23 +27,19 @@ export async function POST(req: Request) {
       );
     }
 
-    // Sanitize the filename and append a timestamp to prevent overwrites
     const sanitizedName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
     const fileKey = `${folder}/${Date.now()}-${sanitizedName}`;
 
-    // Define the upload parameters
     const command = new PutObjectCommand({
       Bucket: process.env.R2_BUCKET_NAME!,
       Key: fileKey,
       ContentType: contentType,
     });
 
-    // Generate the secure presigned URL (The "Ticket")
-    // Valid for exactly 5 minutes (300 seconds)
     const uploadUrl = await getSignedUrl(S3, command, { expiresIn: 300 });
-
-    // Construct the final public URL where the asset will be accessible
-    const publicUrl = `${process.env.NEXT_PUBLIC_R2_DEV_URL}/${fileKey}`;
+    
+    // FIXED: Now matches your .env file exactly (R2_PUBLIC_DOMAIN)
+    const publicUrl = `${process.env.R2_PUBLIC_DOMAIN}/${fileKey}`;
 
     return NextResponse.json({ 
       uploadUrl, 

@@ -1,8 +1,7 @@
-// src/app/admin/graphics/page.tsx
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { UploadCloud, Box, Save, Loader2, RefreshCw } from 'lucide-react';
+import { UploadCloud, Box, Save, Loader2, RefreshCw, Zap } from 'lucide-react';
 
 type GraphicAsset = {
   _id: string;
@@ -10,12 +9,15 @@ type GraphicAsset = {
   category: string;
   modelUrl: string;
   themeColor: string;
+  componentRef?: string; 
 };
 
 export default function GlobalGraphicsAdmin() {
   const [graphics, setGraphics] = useState<GraphicAsset[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
+  // NEW: State to track exact upload percentage
+  const [uploadProgress, setUploadProgress] = useState(0); 
 
   const fetchGraphics = async () => {
     setIsLoading(true);
@@ -35,9 +37,10 @@ export default function GlobalGraphicsAdmin() {
     fetchGraphics();
   }, []);
 
-const handleGraphicSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleGraphicSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsUploading(true);
+    setUploadProgress(0); // Reset progress on new upload
     
     const formData = new FormData(e.currentTarget);
     const file = formData.get('glbFile') as File;
@@ -46,6 +49,7 @@ const handleGraphicSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     const category = formData.get('category') as string;
     const description = formData.get('description') as string;
     const themeColor = formData.get('themeColor') as string;
+    const componentRef = formData.get('componentRef') as string;
 
     if (!file || !file.name.endsWith('.glb')) {
       alert("Please upload a valid .glb 3D model file.");
@@ -54,45 +58,55 @@ const handleGraphicSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     }
 
     try {
-      // 1. MATCHING YOUR WORKSPACE LOGIC: Use your unified /api/upload route
-      const uploadFormData = new FormData();
-      uploadFormData.append("file", file);
-      // We pass "image" here assuming your backend routes "image" types to Cloudflare R2
-      uploadFormData.append("type", "image"); 
-
-      const response = await fetch('/api/upload', {
+      // 1. Ask the backend for the R2 Ticket
+      const presignedRes = await fetch('/api/admin/r2-presigned', {
         method: 'POST',
-        body: uploadFormData, 
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileName: file.name,
+          contentType: 'model/gltf-binary',
+          folder: '3d-models',
+        }),
       });
 
-      if (!response.ok) throw new Error('Failed to authorize upload.');
+      if (!presignedRes.ok) throw new Error('Failed to generate presigned URL.');
+      const { uploadUrl, publicUrl, key } = await presignedRes.json();
 
-      const data = await response.json();
-      let uploadedUrl = '';
+      // 2. NEW: Upload using XMLHttpRequest to get live progress
+      await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('PUT', uploadUrl, true);
+        xhr.setRequestHeader('Content-Type', 'model/gltf-binary');
 
-      // 2. Direct stream to Cloudflare R2 using the presigned URL
-      if (data.isPresigned) {
-        const uploadRes = await fetch(data.uploadUrl, {
-          method: 'PUT',
-          body: file,
-          // Ensure we tell R2 this is a 3D model
-          headers: { 'Content-Type': 'model/gltf-binary' },
-        });
+        // Track live upload progress
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            const percentComplete = Math.round((event.loaded / event.total) * 100);
+            setUploadProgress(percentComplete);
+          }
+        };
 
-        if (!uploadRes.ok) throw new Error("Direct-to-R2 streaming failed.");
-        uploadedUrl = data.url;
-      } else {
-        uploadedUrl = data.url;
-      }
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve(true);
+          } else {
+            reject(new Error(`Cloudflare rejected upload: ${xhr.statusText}`));
+          }
+        };
 
-      // 3. Save configuration to the Global Graphics MongoDB schema
+        xhr.onerror = () => reject(new Error('Network error during upload.'));
+        xhr.send(file);
+      });
+
+      // 3. Save to MongoDB once the upload hits 100%
       const dbRes = await fetch('/api/content/graphics', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title, subtitle, category, description, themeColor,
-          modelUrl: uploadedUrl,
-          r2Key: data.key || `glb-${Date.now()}`,
+          modelUrl: publicUrl,
+          r2Key: key,
+          componentRef: componentRef && componentRef.trim() !== '' ? componentRef.trim() : undefined,
           accentColor: 'text-stone-300',
           glowColor: 'shadow-stone-500/20'
         }),
@@ -100,7 +114,6 @@ const handleGraphicSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 
       if (!dbRes.ok) throw new Error("Failed to save to database.");
 
-      // Refresh the UI list and clear the form
       (e.target as HTMLFormElement).reset();
       fetchGraphics();
 
@@ -109,6 +122,7 @@ const handleGraphicSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
       alert("Upload failed. Check console for details.");
     } finally {
       setIsUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -165,6 +179,11 @@ const handleGraphicSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
             </div>
 
             <div>
+              <label className="block text-xs font-bold tracking-widest uppercase text-stone-500 mb-2">Interactive React Pointer (Optional)</label>
+              <input type="text" name="componentRef" placeholder="e.g., RocketLaunch3D" className="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm focus:outline-none focus:border-stone-400 font-mono text-stone-600"/>
+            </div>
+
+            <div>
               <label className="block text-xs font-bold tracking-widest uppercase text-stone-500 mb-2">.GLB File</label>
               <div className="border-2 border-dashed border-stone-200 bg-stone-50 p-6 rounded-xl flex flex-col items-center text-center relative hover:border-emerald-400 transition-colors">
                 <Box size={24} className="text-stone-400 mb-2" />
@@ -173,9 +192,19 @@ const handleGraphicSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
               </div>
             </div>
 
-            <button type="submit" disabled={isUploading} className="w-full bg-stone-900 hover:bg-stone-800 text-white px-6 py-3 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2">
-              {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-              <span>{isUploading ? 'Uploading to R2...' : 'Save & Publish'}</span>
+            <button type="submit" disabled={isUploading} className="w-full bg-stone-900 hover:bg-stone-800 text-white px-6 py-3 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2 overflow-hidden relative">
+              {/* NEW: Background progress bar fill */}
+              {isUploading && (
+                <div 
+                  className="absolute left-0 top-0 bottom-0 bg-emerald-600 transition-all duration-300" 
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              )}
+              
+              <div className="relative z-10 flex items-center gap-2">
+                {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                <span>{isUploading ? `Uploading: ${uploadProgress}%` : 'Save & Publish'}</span>
+              </div>
             </button>
           </form>
         </div>
@@ -200,12 +229,18 @@ const handleGraphicSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
                   <div className="text-xs font-mono text-stone-400 truncate bg-stone-50 p-2 rounded-lg border border-stone-100">
                     {graphic.modelUrl.split('/').pop()}
                   </div>
+                  {graphic.componentRef && (
+                    <div className="mt-1">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold tracking-wider uppercase bg-amber-50 text-amber-700 border border-amber-200 shadow-sm">
+                        <Zap size={12} className="fill-amber-500" /> {graphic.componentRef}
+                      </span>
+                    </div>
+                  )}
                 </div>
               ))
             )}
           </div>
         </div>
-
       </div>
     </div>
   );
