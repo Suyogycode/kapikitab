@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+// ADDED: ReactNode import
+import React, { useEffect, useState, ReactNode } from 'react';
 import { Loader2 } from 'lucide-react';
 
 declare global {
@@ -16,9 +17,10 @@ interface XRViewerProps {
   alt: string;
   isFullscreen?: boolean;
   animationName?: string; 
+  children?: ReactNode; // NEW: Allows passing spatial UI like hotspots
 }
 
-export default function XRViewer({ src, alt, isFullscreen = false, animationName }: XRViewerProps) {
+export default function XRViewer({ src, alt, isFullscreen = false, animationName, children }: XRViewerProps) {
   const [isEngineReady, setIsEngineReady] = useState(false);
 
   useEffect(() => {
@@ -45,7 +47,7 @@ export default function XRViewer({ src, alt, isFullscreen = false, animationName
         camera-controls
         auto-rotate={!animationName ? "true" : undefined} 
         animation-name={animationName} 
-        autoplay /* THE FIX: Tells the 3D engine to actually play the track! */
+        autoplay 
         ar
         ar-modes="webxr scene-viewer quick-look fallback"
         shadow-intensity="1"
@@ -61,6 +63,10 @@ export default function XRViewer({ src, alt, isFullscreen = false, animationName
         >
           View in Space
         </button>
+
+        {/* NEW: Render custom spatial hotspots injected by wrappers here */}
+        {children}
+
       {/* @ts-expect-error */}
       </model-viewer>
     </div>
