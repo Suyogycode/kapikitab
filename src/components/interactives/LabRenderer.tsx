@@ -4,7 +4,6 @@ import React from 'react';
 import dynamic from 'next/dynamic';
 import { Loader2 } from 'lucide-react';
 
-// Central Registry of available interactive simulation components
 const labRegistry: Record<string, React.ComponentType<any>> = {
   'FunctionMachineLab': dynamic(() => import('./labs/FunctionMachineLab'), {
     loading: () => (
@@ -13,9 +12,15 @@ const labRegistry: Record<string, React.ComponentType<any>> = {
       </div>
     ),
   }),
-  // Future labs can be added here seamlessly:
-  // 'OpticsRefractionLab': dynamic(() => import('./labs/OpticsRefractionLab')),
-  // 'TrigonometryUnitCircle': dynamic(() => import('./labs/TrigonometryUnitCircle')),
+  
+  'GravityLabR3F': dynamic(() => import('./labs/GravityLabR3F'), {
+    ssr: false, /* <--- THE FIX: Disables Server-Side Rendering for the GPU */
+    loading: () => (
+      <div className="flex h-[600px] w-full items-center justify-center bg-stone-900 rounded-2xl border border-stone-800">
+        <Loader2 className="animate-spin text-emerald-600" size={32} />
+      </div>
+    ),
+  }),
 };
 
 interface LabRendererProps {
