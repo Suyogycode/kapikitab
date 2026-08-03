@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Play, RotateCcw, Layers } from 'lucide-react';
-import XRViewer from '../XRViewer';
+import XRViewer from '../../model-viewer/XRViewer';
 
 interface WrapperProps {
   modelUrl: string;

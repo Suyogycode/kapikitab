@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Maximize, Minimize, Loader2, Sparkles, ArrowRight, Eye } from 'lucide-react';
-import XRViewer from '@/components/interactives/XRViewer';
+import XRViewer from '@/components/interactives/model-viewer/XRViewer';
 import GraphicRenderer from '@/components/interactives/GraphicRenderer';
 
 type GraphicAsset = {
