@@ -45,6 +45,7 @@ const spatialEngineRegistry: Record<string, React.ComponentType<any>> = {
   'GravityLabR3F': dynamic(() => import('./spatial-engine/labs/GravityLabR3F'), { ssr: false, loading: LoadingState }),
   'ChemistryTestLab': dynamic(() => import('./spatial-engine/labs/ChemistryTestLab'), { ssr: false, loading: LoadingState }),
   'WindTunnelLab': dynamic(() => import('./spatial-engine/labs/WindTunnelLab'), { ssr: false, loading: LoadingState }),
+  'CollisionLab': dynamic(() => import('./spatial-engine/labs/CollisionLab'), { ssr: false, loading: LoadingState }),
 };
 
 // ==================================================================
