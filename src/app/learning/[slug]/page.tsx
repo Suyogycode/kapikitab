@@ -9,8 +9,8 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
-// Lab Renderer & Audio Player Imports
-import LabRenderer from '@/components/interactives/LabRenderer';
+// THE FIX: Imported the lightweight 2D Renderer instead of the heavy 3D Router
+import ReactPuzzleRenderer from '@/components/interactives/2d-simulations/ReactPuzzleRenderer';
 import AudioOverviewPlayer from '@/app/learning/AudioOverviewPlayer';
 
 export default function DynamicLearningWorkspace() {
@@ -207,7 +207,7 @@ export default function DynamicLearningWorkspace() {
                   </div>
                 )}
 
-                {/* 2. DYNAMIC INTERACTIVE LAB RENDERER */}
+                {/* 2. DYNAMIC 2D PUZZLE RENDERER */}
                 {labAsset && (
                   <div className="w-full my-8">
                     <div className="flex items-center gap-2 mb-4">
@@ -215,7 +215,8 @@ export default function DynamicLearningWorkspace() {
                       <h3 className="text-xl font-serif text-stone-900">{labAsset.title}</h3>
                     </div>
                     {labComponentRef ? (
-                      <LabRenderer componentRef={labComponentRef} />
+                      /* THE FIX: Replaced SimulationRouter with ReactPuzzleRenderer */
+                      <ReactPuzzleRenderer componentRef={labComponentRef} />
                     ) : (
                       <div className="p-6 bg-amber-50 border border-amber-200 rounded-2xl text-amber-800 text-sm">
                         No <code>componentRef</code> pointer found for this lab asset.

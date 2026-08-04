@@ -1,11 +1,11 @@
-// src/app/dashboard/simulation/page.tsx
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Maximize, Minimize, Loader2, Sparkles, ArrowRight, Eye } from 'lucide-react';
-import XRViewer from '@/components/interactives/model-viewer/XRViewer';
-import GraphicRenderer from '@/components/interactives/GraphicRenderer';
+
+// THE FIX: Explicitly importing the Orchestrator with its proper name
+import SimulationRouter from '@/components/interactives/SimulationRouter';
 
 type GraphicAsset = {
   _id: string;
@@ -17,6 +17,7 @@ type GraphicAsset = {
   themeColor: string;
   accentColor: string;
   glowColor: string;
+  componentRef?: string;
 };
 
 export default function SimulationPage() {
@@ -119,7 +120,6 @@ export default function SimulationPage() {
         </div>
 
         {/* Left Side: Content */}
-        {/* FIXED: Added h-0 and p-0 when isolated so it fully collapses on mobile */}
         <div className={`relative z-10 flex flex-col justify-center pointer-events-none transition-all duration-700 ease-in-out ${
           isIsolated ? 'w-0 h-0 opacity-0 overflow-hidden p-0' : 'w-full md:w-1/3 h-auto md:h-full p-8 md:p-12 opacity-100'
         }`}>
@@ -138,13 +138,13 @@ export default function SimulationPage() {
           </AnimatePresence>
         </div>
 
-{/* Right Side: LIVE WEBXR MODEL VIEWER */}
+        {/* Right Side: LIVE WEBXR MODEL VIEWER OR R3F ENGINE */}
         <div className={`relative z-20 flex items-center justify-center cursor-grab active:cursor-grabbing transition-all duration-700 ease-in-out ${
           isIsolated ? 'w-full h-full flex-1' : 'w-full md:w-2/3 h-[400px] md:h-full'
         }`}>
           
-          {/* THE FIX: Replaced XRViewer with GraphicRenderer */}
-          <GraphicRenderer 
+          {/* THE FIX: Replaced with proper SimulationRouter tag */}
+          <SimulationRouter 
             activeSim={activeSim} 
             isFullscreen={isFullscreen} 
           />

@@ -173,7 +173,7 @@ const handleAssetSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
       return;
     }
 
-    // 2. Map Panel Types to MongoDB Schema Enums
+// 2. Map Panel Types to MongoDB Schema Enums
     const typeMapping: Record<string, string> = {
       'video': 'video_lecture',
       'pdf': 'pdf_document',
@@ -186,11 +186,12 @@ const handleAssetSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 
     // 3. Format Content payload dynamically based on type
     let finalContent: any = uploadedUrl;
+    
     if (schemaCompliantType === 'video_lecture') {
       finalContent = { videoUrl: uploadedUrl };
     } else if (schemaCompliantType === 'react_simulation') {
-      // Store the React component pointer key for dynamic imports
-      finalContent = { componentRef: componentRef.trim() };
+      // THE FIX: Store the string directly to prevent Mongoose "[object Object]" corruption
+      finalContent = componentRef.trim(); 
     }
 
     contentPayload = {

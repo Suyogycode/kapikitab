@@ -5,12 +5,12 @@ export interface IGraphic extends Document {
   subtitle: string;
   category: string;
   description: string;
-  modelUrl: string; 
-  r2Key: string;
+  modelUrl?: string;     // THE FIX: Made optional for code-only labs
+  r2Key?: string;        // THE FIX: Made optional for code-only labs
   themeColor: string; 
   accentColor: string; 
   glowColor: string; 
-  componentRef?: string; // ADDED: TypeScript now knows this exists
+  componentRef?: string; 
   createdAt: Date;
 }
 
@@ -19,12 +19,15 @@ const graphicSchema = new Schema<IGraphic>({
   subtitle: { type: String, required: true },
   category: { type: String, required: true },
   description: { type: String, required: true },
-  modelUrl: { type: String, required: true },
-  r2Key: { type: String, required: true },
+  
+  // THE FIX: Removed required: true, added a default empty string
+  modelUrl: { type: String, required: false, default: "" }, 
+  r2Key: { type: String, required: false, default: "" },    
+  
   themeColor: { type: String, default: 'from-stone-800 to-stone-950' },
   accentColor: { type: String, default: 'text-stone-300' },
   glowColor: { type: String, default: 'shadow-stone-500/20' },
-  componentRef: { type: String, required: false }, // Must match the interface exactly
+  componentRef: { type: String, required: false }, 
   createdAt: { type: Date, default: Date.now },
 });
 

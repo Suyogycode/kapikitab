@@ -2,7 +2,7 @@
 
 import React, { useState, useRef } from 'react';
 import { Play, RotateCcw, Layers } from 'lucide-react';
-import XRViewer from '@/model-viewer/XRViewer';
+import XRViewer from '../XRViewer';
 
 export default function Interactive3DLab() {
   // --- REACT LAB STATE ---
