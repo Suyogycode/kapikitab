@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { Text } from '@react-three/drei';
-// Import the context hook from our core engine
 import { useARAnchor } from '../core/KapikitabAREnvironment';
 
 interface SpatialButtonProps {
@@ -15,9 +14,8 @@ interface SpatialButtonProps {
 
 export default function SpatialButton({ position, label, onTrigger, isPrimary = false, isDanger = false }: SpatialButtonProps) {
   const [pressed, setPressed] = useState(false);
-  const resetAnchor = useARAnchor(); // Connects to the Core Engine
+  const resetAnchor = useARAnchor();
 
-  // Kapikitab's minimalist, earthy color palette
   const baseColor = isDanger ? "#7f1d1d" : (isPrimary ? "#44403c" : "#292524");
   const highlightColor = isDanger ? "#ef4444" : "#10b981"; 
   const size: [number, number, number] = isPrimary ? [0.35, 0.12, 0.04] : [0.15, 0.08, 0.02];
@@ -25,18 +23,19 @@ export default function SpatialButton({ position, label, onTrigger, isPrimary = 
   const handlePointerDown = (e: any) => {
     e.stopPropagation();
     setPressed(true);
-    
-    // Haptic feedback for tactile realism
-    if (typeof navigator !== 'undefined' && navigator.vibrate) {
-      navigator.vibrate(20); 
-    }
+    if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(20); 
   };
 
   const handlePointerUp = (e: any) => {
     e.stopPropagation();
     setPressed(false);
+  };
+
+  // THE FIX: Added a dedicated click handler that resists OrbitControls interference
+  const handleClick = (e: any) => {
+    e.stopPropagation();
+    setPressed(false);
     
-    // If it's a danger button named "RE-ANCHOR", trigger the engine reset automatically
     if (isDanger && label === "RE-ANCHOR" && resetAnchor) {
       resetAnchor();
     } else {
@@ -46,23 +45,23 @@ export default function SpatialButton({ position, label, onTrigger, isPrimary = 
 
   return (
     <group position={position}>
-      {/* The "Clumsy Thumb" Hitbox - 1.1x larger than the visual button */}
+      {/* THE FIX: Replaced visible={false} with a fully transparent material so the Raycaster detects it from all angles! */}
+      {/* Expanded the Z-axis hitbox slightly more for easier AR tapping */}
       <mesh
-        visible={false}
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
-        onPointerOut={() => setPressed(false)}
+        onPointerOut={handlePointerUp}
+        onClick={handleClick}
       >
-        <boxGeometry args={[size[0] * 1.1, size[1] * 1.1, size[2] * 2]} />
+        <boxGeometry args={[size[0] * 1.5, size[1] * 1.5, size[2] * 4]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
 
-      {/* The Visual Button - frustumCulled={false} prevents it from vanishing */}
       <mesh scale={pressed ? 0.9 : 1} frustumCulled={false}>
         <boxGeometry args={size} />
         <meshStandardMaterial color={pressed ? highlightColor : baseColor} roughness={0.9} />
       </mesh>
 
-      {/* The Text Label */}
       <Text
         position={[0, 0, size[2] / 2 + 0.005]}
         fontSize={isPrimary ? 0.045 : 0.03}

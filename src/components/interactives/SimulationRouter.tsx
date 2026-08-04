@@ -43,8 +43,8 @@ const modelViewerRegistry: Record<string, React.ComponentType<any>> = {
 // ==================================================================
 const spatialEngineRegistry: Record<string, React.ComponentType<any>> = {
   'GravityLabR3F': dynamic(() => import('./spatial-engine/labs/GravityLabR3F'), { ssr: false, loading: LoadingState }),
-// THE NEW FIX: Registering the chemistry test lab
   'ChemistryTestLab': dynamic(() => import('./spatial-engine/labs/ChemistryTestLab'), { ssr: false, loading: LoadingState }),
+  'WindTunnelLab': dynamic(() => import('./spatial-engine/labs/WindTunnelLab'), { ssr: false, loading: LoadingState }),
 };
 
 // ==================================================================
