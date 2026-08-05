@@ -56,11 +56,27 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   
   const [activeSubject, setActiveSubject] = useState(() => allowedSubjects[0]);
 
+  // Load the persisted subject from local storage on mount
   useEffect(() => {
-    if (!allowedSubjects.includes(activeSubject)) {
-      setActiveSubject(allowedSubjects[0]);
+    if (typeof window !== 'undefined') {
+      const savedSubject = localStorage.getItem('kapikitab-active-subject');
+      // Ensure the saved subject is actually valid for their current class
+      if (savedSubject && allowedSubjects.includes(savedSubject)) {
+        setActiveSubject(savedSubject);
+      } else if (!allowedSubjects.includes(activeSubject)) {
+        setActiveSubject(allowedSubjects[0]);
+      }
     }
-  }, [currentClassId, activeSubject, allowedSubjects]);
+  }, [currentClassId, allowedSubjects, activeSubject]);
+
+  // Custom handler to update state and persist to storage simultaneously 
+  const handleSubjectChange = (id: string) => {
+    setActiveSubject(id);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('kapikitab-active-subject', id);
+    }
+    setShowSubject(false);
+  };
 
   if (status === "loading") {
     return (
@@ -104,20 +120,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <AnimatePresence>
             {showSubject && (
               <motion.div initial={{ opacity: 0, y: -10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -10, scale: 0.95 }} transition={{ duration: 0.4, ease: "easeOut" }} className="absolute top-24 sm:top-28 right-0 origin-top-right z-30">
-                <LiquidGlassMenu items={subjectTabs} activeItem={activeSubject} setActiveItem={(id: string) => { setActiveSubject(id); setShowSubject(false); }} isHorizontal={false} />
+                <LiquidGlassMenu items={subjectTabs} activeItem={activeSubject} setActiveItem={handleSubjectChange} isHorizontal={false} />
               </motion.div>
             )}
           </AnimatePresence>
         </div>
       </header>
 
-      <DashboardContext.Provider value={{ currentClassId, activeSubject, setActiveSubject }}>
+      {/* Passed the new handleSubjectChange to Context so child components can safely trigger storage updates if needed */}
+      <DashboardContext.Provider value={{ currentClassId, activeSubject, setActiveSubject: handleSubjectChange }}>
         <main className="flex-1 relative w-full h-full pt-20 pb-28 sm:pt-24 sm:pb-32 overflow-y-auto no-scrollbar overscroll-none">
           {children}
         </main>
       </DashboardContext.Provider>
 
-      {/* Reverted to original uncluttered footer */}
       <nav className="fixed bottom-0 w-full z-50 pointer-events-none px-4 sm:px-6 pb-6 sm:pb-8 pt-20 bg-linear-to-t from-[#FDFCF8] via-[#FDFCF8]/80 to-transparent">
         <div className="max-w-md mx-auto pointer-events-auto bg-white/70 backdrop-blur-2xl border border-white/60 shadow-[0_20px_50px_rgb(0,0,0,0.05)] rounded-[2.5rem] flex justify-between items-center px-4 py-3 relative">
           {navItems.map((item) => {

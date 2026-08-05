@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { signIn } from 'next-auth/react';
-import { ArrowLeft, Mail } from 'lucide-react';
+import { ArrowLeft, Mail, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -12,6 +12,7 @@ export default function SignupPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -55,8 +56,7 @@ export default function SignupPage() {
   };
 
   return (
-    // Recreated the soft, elegant gradient background from your screenshot
-    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-gradient-to-br from-emerald-50 via-[#FDFCF8] to-[#FDFCF8] relative px-4">
+    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-gradient-to-br from-emerald-50/50 via-[#FDFCF8] to-[#FDFCF8] relative px-4">
       
       {/* Floating Back Button */}
       <Link href="/" className="absolute top-8 left-8 md:top-12 md:left-12 h-12 w-12 bg-white rounded-full flex items-center justify-center shadow-sm border border-stone-100 text-stone-600 hover:scale-105 transition-transform">
@@ -70,7 +70,7 @@ export default function SignupPage() {
         className="w-full max-w-md bg-white p-10 md:p-12 rounded-[3rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60"
       >
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-serif text-stone-900 mb-2">Begin your journey</h1>
+          <h1 className="text-3xl font-serif text-stone-900 mb-2 tracking-tight">Begin your journey</h1>
           <p className="text-stone-500 font-light text-sm">Take a deep breath. Your quiet space to learn awaits.</p>
         </div>
 
@@ -122,19 +122,29 @@ export default function SignupPage() {
             />
           </div>
 
-          <input 
-            type="password" 
-            placeholder="Create a password" 
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            className="w-full bg-stone-50/50 border border-stone-200 text-stone-800 rounded-2xl py-3.5 px-5 focus:outline-none focus:border-stone-400 transition-all placeholder:text-stone-400 font-light"
-          />
+          <div className="relative">
+            <input 
+              type={showPassword ? "text" : "password"} 
+              placeholder="Create a password" 
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="w-full bg-stone-50/50 border border-stone-200 text-stone-800 rounded-2xl py-3.5 pl-5 pr-12 focus:outline-none focus:border-stone-400 transition-all placeholder:text-stone-400 font-light"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 transition-colors focus:outline-none"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
 
           <button 
             type="submit" 
             disabled={isLoading}
-            className="w-full bg-[#232323] hover:bg-black text-white py-4 rounded-2xl font-medium transition-colors mt-4 disabled:opacity-70"
+            className="w-full bg-[#232323] hover:bg-black text-white py-4 rounded-2xl font-medium transition-colors mt-4 disabled:opacity-70 shadow-sm"
           >
             {isLoading ? 'Creating space...' : 'Continue securely'}
           </button>

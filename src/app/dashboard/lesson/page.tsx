@@ -112,26 +112,36 @@ export default function LessonPage() {
   const theme = subjectThemes[activeSubject] || subjectThemes['math'];
 
   useEffect(() => {
+    // Flag to track if this specific fetch request is still the active one
+    let isCurrent = true;
+
     const fetchChapters = async () => {
       setIsLoading(true);
       try {
         const res = await fetch(`/api/content/chapters?classId=${currentClassId}&subjectId=${activeSubject}`);
         const data = await res.json();
         
-        if (res.ok) {
+        // Only update the state if the subject hasn't changed since we started fetching
+        if (res.ok && isCurrent) {
           const sortedData = (data || []).sort((a: any, b: any) => a.chapterNumber - b.chapterNumber);
           setChapters(sortedData);
         }
       } catch (error) {
-        console.error("Failed to load chapters dynamically:", error);
+        if (isCurrent) console.error("Failed to load chapters dynamically:", error);
       } finally {
-        setIsLoading(false);
+        if (isCurrent) setIsLoading(false);
       }
     };
 
     if (activeSubject) {
       fetchChapters();
     }
+
+    // Cleanup function runs if activeSubject changes BEFORE the fetch finishes,
+    // safely invalidating the old request so it doesn't overwrite your UI.
+    return () => {
+      isCurrent = false;
+    };
   }, [activeSubject, currentClassId]);
 
   useEffect(() => {
@@ -208,7 +218,6 @@ export default function LessonPage() {
                       <motion.button 
                         whileHover={status !== 'locked' ? { scale: 1.02, y: -4 } : {}}
                         whileTap={status !== 'locked' ? { scale: 0.98 } : {}}
-                        // Removed the outer box boundaries entirely for a pure, clean node
                         className={`relative flex items-center justify-center w-24 h-24 lg:w-32 lg:h-32 rounded-[2rem] bg-white/90 backdrop-blur-sm shadow-[0_10px_40px_rgb(0,0,0,0.03)] hover:shadow-[0_20px_50px_rgb(0,0,0,0.06)] border border-white transition-all duration-700 ease-out ${
                           status === 'locked' ? 'opacity-40 grayscale cursor-not-allowed' : 'cursor-pointer'
                         }`}
@@ -226,7 +235,6 @@ export default function LessonPage() {
                       </motion.button>
                     </Link>
                     
-                    {/* Implemented text-center and line-clamp-2 for elegant wrapping */}
                     <span className={`absolute lg:-bottom-16 -bottom-14 font-serif font-light text-xs sm:text-sm tracking-[0.1em] ${theme.text} opacity-70 text-center w-[120px] lg:w-[150px] line-clamp-2 leading-relaxed whitespace-normal break-words`}>
                       {formatChapterTitle(chapter.title, chapter.chapterNumber)}
                     </span>
