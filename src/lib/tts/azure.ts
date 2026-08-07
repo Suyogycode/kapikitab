@@ -1,25 +1,46 @@
-import { MsEdgeTTS, OUTPUT_FORMAT } from 'msedge-tts';
+import * as sdk from "microsoft-cognitiveservices-speech-sdk";
 
-export async function generateAzureAudioSegment(text: string, speaker: 'A' | 'B'): Promise<Buffer> {
-  const tts = new MsEdgeTTS();
+export async function generateAzureAudioSegment(
+  text: string, 
+  speaker: 'A' | 'B',
+  language: 'hinglish' | 'english' = 'hinglish'
+): Promise<Buffer> {
+  const speechKey = process.env.AZURE_SPEECH_KEY;
+  const speechRegion = process.env.AZURE_SPEECH_REGION;
+
+  if (!speechKey || !speechRegion) {
+    throw new Error("Azure Speech credentials are missing.");
+  }
+
+  const speechConfig = sdk.SpeechConfig.fromSubscription(speechKey, speechRegion);
+  speechConfig.speechSynthesisOutputFormat = sdk.SpeechSynthesisOutputFormat.Audio48Khz192KBitRateMonoMp3;
   
-  await tts.setMetadata(
-    speaker === 'A' ? 'hi-IN-KavyaNeural' : 'hi-IN-AaravNeural',
-    OUTPUT_FORMAT.AUDIO_24KHZ_96KBITRATE_MONO_MP3
-  );
+  // Dynamically assign premium neural voices based on the selected language
+  if (language === 'english') {
+    speechConfig.speechSynthesisVoiceName = speaker === 'A' ? 'en-IN-AartiNeural' : 'en-IN-AaravNeural';
+  } else {
+    speechConfig.speechSynthesisVoiceName = speaker === 'A' ? 'hi-IN-AartiNeural' : 'hi-IN-ArjunNeural';
+  }
 
-  // FIX: Destructure the audioStream from the returned object
-  const { audioStream } = tts.toStream(text);
-  const chunks: Uint8Array[] = [];
+  const synthesizer = new sdk.SpeechSynthesizer(speechConfig);
 
   return new Promise((resolve, reject) => {
-    audioStream.on('data', (chunk: Uint8Array) => chunks.push(chunk));
-    
-    // Some Node streams emit 'end', others emit 'close'. 
-    // Listening to both ensures the Promise resolves safely.
-    audioStream.on('end', () => resolve(Buffer.concat(chunks)));
-    audioStream.on('close', () => resolve(Buffer.concat(chunks)));
-    
-    audioStream.on('error', (err: Error) => reject(err));
+    synthesizer.speakTextAsync(
+      text,
+      (result) => {
+        if (result.reason === sdk.ResultReason.SynthesizingAudioCompleted) {
+          const buffer = Buffer.from(result.audioData);
+          synthesizer.close();
+          resolve(buffer);
+        } else {
+          synthesizer.close();
+          reject(new Error("Azure TTS Synthesis failed"));
+        }
+      },
+      (error) => {
+        synthesizer.close();
+        reject(error);
+      }
+    );
   });
 }

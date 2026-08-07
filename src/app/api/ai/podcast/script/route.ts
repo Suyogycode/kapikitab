@@ -7,8 +7,7 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 export async function POST(req: NextRequest) {
   try {
-    // 1. Extract 'engine' to determine the language
-    const { chapterId, engine } = await req.json();
+    const { chapterId, language } = await req.json();
 
     if (!chapterId) {
       return NextResponse.json({ error: 'chapterId is required' }, { status: 400 });
@@ -25,9 +24,9 @@ export async function POST(req: NextRequest) {
       ? chapter.summary 
       : `Chapter Title: ${chapter.title}`;
 
-    // 2. Dynamically adjust the language based on the selected TTS engine
-    const languageInstruction = engine === 'kokoro' 
-      ? "pure English (suitable for standard American/British text-to-speech without accents)" 
+    // Adjust instructions based on the requested language
+    const languageInstruction = language === 'english' 
+      ? "pure English (suitable for standard Indian English pronunciation)" 
       : "Hinglish (a natural mix of Hindi and English)";
 
     const systemPrompt = `You are an expert educational podcast scriptwriter for middle school students in India.
@@ -48,7 +47,7 @@ CANONICAL CONTEXT:
 ${contextText}`;
 
     const completion = await groq.chat.completions.create({
-      model: 'openai/gpt-oss-120b', // Swapped to your custom Groq model
+      model: 'openai/gpt-oss-120b', 
       messages: [
         { role: 'system', content: 'You output strictly raw JSON arrays of objects containing speaker and text fields.' },
         { role: 'user', content: systemPrompt }
@@ -59,7 +58,6 @@ ${contextText}`;
 
     const responseContent = completion.choices[0]?.message?.content || '[]';
     
-    // 3. Fallback parsing in case the OSS model wraps the JSON in markdown blocks
     let parsedScript;
     try {
       parsedScript = JSON.parse(responseContent);
