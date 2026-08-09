@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useParams } from 'next/navigation'; 
 import { 
   ArrowLeft, PlayCircle, Beaker, 
@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
-// THE FIX: Imported the lightweight 2D Renderer instead of the heavy 3D Router
 import ReactPuzzleRenderer from '@/components/interactives/2d-simulations/ReactPuzzleRenderer';
 import AudioOverviewPlayer from '@/app/learning/AudioOverviewPlayer';
 
@@ -83,13 +82,10 @@ export default function DynamicLearningWorkspace() {
     }
   };
 
-  const { scrollYProgress } = useScroll();
-  const backgroundColor = useTransform(scrollYProgress, [0, 0.5, 1], ["#FDFCF8", "#F5F5F0", "#FDFCF8"]);
-
   if (isLoading) {
     return (
-      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[#FDFCF8] text-stone-800">
-        <Loader2 className="animate-spin text-emerald-600 mb-4" size={40} />
+      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[#FDFCF8] dark:bg-[#1C1F2B] text-stone-800 dark:text-slate-200 transition-colors duration-500">
+        <Loader2 className="animate-spin text-emerald-600 dark:text-blue-400 mb-4" size={40} />
         <h2 className="font-serif text-xl sm:text-2xl font-medium">Mounting Curriculum...</h2>
       </div>
     );
@@ -97,36 +93,36 @@ export default function DynamicLearningWorkspace() {
 
   if (!chapter) {
     return (
-      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[#FDFCF8] text-stone-800">
+      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[#FDFCF8] dark:bg-[#1C1F2B] text-stone-800 dark:text-slate-200 transition-colors duration-500">
         <h2 className="font-serif text-2xl sm:text-3xl font-medium mb-4">Chapter Data Not Found</h2>
         <Link href="/dashboard/lesson">
-          <button className="bg-stone-900 text-white px-6 py-3 rounded-full hover:bg-stone-800 transition-colors">Return to Map</button>
+          <button className="bg-stone-900 dark:bg-blue-600 text-white px-6 py-3 rounded-full hover:bg-stone-800 dark:hover:bg-blue-500 transition-colors">Return to Map</button>
         </Link>
       </div>
     );
   }
 
   return (
-    <motion.div className="relative w-full min-h-screen transition-colors duration-200 text-stone-800" style={{ backgroundColor }}>
+    <div className="relative w-full min-h-screen transition-colors duration-500 text-stone-800 dark:text-slate-200 bg-[#FDFCF8] dark:bg-[#1C1F2B]">
       
       {/* STICKY NAVIGATION BAR */}
       <div className="sticky top-0 left-0 w-full p-4 sm:p-6 flex justify-between items-start z-50 pointer-events-none">
         <Link href="/dashboard/lesson" className="pointer-events-auto">
-          <button className="h-10 w-10 sm:h-12 sm:w-12 rounded-full flex items-center justify-center backdrop-blur-xl bg-white/50 text-stone-800 border border-stone-200 hover:scale-105 transition-all shadow-sm">
+          <button className="h-10 w-10 sm:h-12 sm:w-12 rounded-full flex items-center justify-center backdrop-blur-xl bg-white/50 dark:bg-[#282C3D]/50 text-stone-800 dark:text-slate-300 border border-stone-200 dark:border-slate-700 hover:scale-105 transition-all shadow-sm">
             <ArrowLeft size={18} className="sm:w-5 sm:h-5" />
           </button>
         </Link>
 
-        <div className="pointer-events-auto p-1.5 rounded-full flex items-center shadow-lg backdrop-blur-xl bg-white/50 border border-stone-200 text-stone-600 text-xs sm:text-sm font-medium overflow-x-auto max-w-[60vw] no-scrollbar">
+        <div className="pointer-events-auto p-1.5 rounded-full flex items-center shadow-lg backdrop-blur-xl bg-white/50 dark:bg-[#282C3D]/50 border border-stone-200 dark:border-slate-700/80 text-stone-600 dark:text-slate-400 text-xs sm:text-sm font-medium overflow-x-auto max-w-[60vw] no-scrollbar transition-colors">
           {chapter.units?.map((unit: any) => {
             const isActive = activeUnit === unit.unitId;
             return (
               <button 
                 key={unit.unitId} 
                 onClick={() => scrollToUnit(unit.unitId)} 
-                className={`relative px-3 py-2 md:px-5 md:py-2.5 rounded-full flex items-center transition-colors duration-300 whitespace-nowrap ${isActive ? 'text-emerald-800' : 'hover:text-stone-900'}`}
+                className={`relative px-3 py-2 md:px-5 md:py-2.5 rounded-full flex items-center transition-colors duration-300 whitespace-nowrap ${isActive ? 'text-emerald-800 dark:text-blue-200' : 'hover:text-stone-900 dark:hover:text-slate-200'}`}
               >
-                {isActive && <motion.div layoutId="activeNavPill" className="absolute inset-0 rounded-full bg-emerald-100/80" transition={{ type: "spring", stiffness: 400, damping: 30 }} />}
+                {isActive && <motion.div layoutId="activeNavPill" className="absolute inset-0 rounded-full bg-emerald-100/80 dark:bg-blue-900/40" transition={{ type: "spring", stiffness: 400, damping: 30 }} />}
                 <span className="relative z-10">1.{unit.order} {unit.title}</span>
               </button>
             );
@@ -138,10 +134,10 @@ export default function DynamicLearningWorkspace() {
       {/* HEADER SECTION */}
       <div className="w-full flex flex-col items-center pt-12 sm:pt-20 px-4 sm:px-6 pb-12">
         <div className="max-w-4xl w-full text-center">
-          <span className="text-emerald-600 font-bold tracking-widest text-xs sm:text-sm uppercase mb-4 block">
+          <span className="text-emerald-600 dark:text-blue-400 font-bold tracking-widest text-xs sm:text-sm uppercase mb-4 block transition-colors">
             Chapter {String(chapter.chapterNumber).padStart(2, '0')}
           </span>
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-serif leading-tight text-stone-900">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-serif leading-tight text-stone-900 dark:text-slate-100 transition-colors">
             {chapter.title}
           </h1>
         </div>
@@ -176,7 +172,6 @@ export default function DynamicLearningWorkspace() {
               : currentQuestion.correctAnswers?.includes(answeredValue)
           );
 
-          // Extract componentRef from labAsset content payload
           const labComponentRef = labAsset 
             ? (typeof labAsset.content === 'object' ? labAsset.content?.componentRef : labAsset.content)
             : null;
@@ -185,21 +180,21 @@ export default function DynamicLearningWorkspace() {
             <div key={unit.unitId} id={`unit-${unit.unitId}`} className="scroll-mt-32">
               
               <div className="flex items-center space-x-4 mb-10">
-                <div className="h-12 w-12 rounded-xl bg-stone-900 text-white flex items-center justify-center font-mono text-lg font-medium shadow-md">
+                <div className="h-12 w-12 rounded-xl bg-stone-900 dark:bg-blue-600 text-white flex items-center justify-center font-mono text-lg font-medium shadow-md transition-colors">
                   1.{unit.order}
                 </div>
-                <h2 className="text-2xl sm:text-3xl font-serif text-stone-900">{unit.title}</h2>
+                <h2 className="text-2xl sm:text-3xl font-serif text-stone-900 dark:text-slate-100 transition-colors">{unit.title}</h2>
               </div>
 
               <div className="space-y-12">
                 
                 {/* 1. VIDEO LAYER */}
                 {videoAsset && (
-                  <div className="w-full aspect-video bg-black rounded-2xl overflow-hidden shadow-xl border border-stone-200">
+                  <div className="w-full aspect-video bg-black dark:bg-[#0F1117] rounded-2xl overflow-hidden shadow-xl border border-stone-200 dark:border-slate-800 transition-colors">
                     {videoAsset.content?.videoUrl ? (
                       <iframe src={videoAsset.content.videoUrl} className="w-full h-full border-0" allowFullScreen />
                     ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center text-white/50 bg-stone-900">
+                      <div className="w-full h-full flex flex-col items-center justify-center text-white/50 bg-stone-900 dark:bg-[#0F1117]">
                         <PlayCircle size={48} className="mb-4 opacity-50" />
                         <p>Video processing...</p>
                       </div>
@@ -211,14 +206,13 @@ export default function DynamicLearningWorkspace() {
                 {labAsset && (
                   <div className="w-full my-8">
                     <div className="flex items-center gap-2 mb-4">
-                      <Beaker size={20} className="text-amber-500" />
-                      <h3 className="text-xl font-serif text-stone-900">{labAsset.title}</h3>
+                      <Beaker size={20} className="text-amber-500 dark:text-blue-400 transition-colors" />
+                      <h3 className="text-xl font-serif text-stone-900 dark:text-slate-100 transition-colors">{labAsset.title}</h3>
                     </div>
                     {labComponentRef ? (
-                      /* THE FIX: Replaced SimulationRouter with ReactPuzzleRenderer */
                       <ReactPuzzleRenderer componentRef={labComponentRef} />
                     ) : (
-                      <div className="p-6 bg-amber-50 border border-amber-200 rounded-2xl text-amber-800 text-sm">
+                      <div className="p-6 bg-amber-50 dark:bg-blue-900/10 border border-amber-200 dark:border-blue-800/30 rounded-2xl text-amber-800 dark:text-blue-300 text-sm transition-colors">
                         No <code>componentRef</code> pointer found for this lab asset.
                       </div>
                     )}
@@ -235,20 +229,20 @@ export default function DynamicLearningWorkspace() {
 
                       if (doc.type === 'diagram') {
                         return (
-                          <div key={idx} className="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden flex flex-col group">
-                            <div className="w-full h-48 bg-stone-100 relative overflow-hidden">
+                          <div key={idx} className="bg-white dark:bg-[#282C3D] rounded-2xl shadow-sm border border-stone-200 dark:border-slate-700/80 overflow-hidden flex flex-col group transition-colors">
+                            <div className="w-full h-48 bg-stone-100 dark:bg-[#151821] relative overflow-hidden transition-colors">
                               <img 
                                 src={assetUrl} 
                                 alt={doc.title} 
                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                               />
                             </div>
-                            <div className="p-4 bg-white flex items-center justify-between">
+                            <div className="p-4 bg-white dark:bg-[#282C3D] flex items-center justify-between transition-colors">
                               <div>
-                                <h4 className="font-medium text-stone-900">{doc.title}</h4>
-                                <span className="text-[10px] text-stone-400 uppercase tracking-widest font-bold">Visual Diagram</span>
+                                <h4 className="font-medium text-stone-900 dark:text-slate-200 transition-colors">{doc.title}</h4>
+                                <span className="text-[10px] text-stone-400 dark:text-slate-500 uppercase tracking-widest font-bold transition-colors">Visual Diagram</span>
                               </div>
-                              <a href={assetUrl} target="_blank" rel="noopener noreferrer" className="p-2 bg-stone-50 hover:bg-stone-100 rounded-lg text-stone-500 transition-colors">
+                              <a href={assetUrl} target="_blank" rel="noopener noreferrer" className="p-2 bg-stone-50 dark:bg-[#151821] hover:bg-stone-100 dark:hover:bg-slate-700 rounded-lg text-stone-500 dark:text-slate-400 transition-colors">
                                 <ImageIcon size={18} />
                               </a>
                             </div>
@@ -258,13 +252,13 @@ export default function DynamicLearningWorkspace() {
 
                       return (
                         <a key={idx} href={assetUrl} target="_blank" rel="noopener noreferrer" className="block">
-                          <div className="bg-white p-6 rounded-2xl shadow-sm border border-stone-200 hover:shadow-md hover:border-blue-200 transition-all group flex items-center space-x-4 h-full">
-                            <div className="h-12 w-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                          <div className="bg-white dark:bg-[#282C3D] p-6 rounded-2xl shadow-sm border border-stone-200 dark:border-slate-700/80 hover:shadow-md hover:border-blue-200 dark:hover:border-blue-500 transition-all group flex items-center space-x-4 h-full">
+                            <div className="h-12 w-12 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-105 transition-all">
                               <FileText size={24} />
                             </div>
                             <div>
-                              <h4 className="font-medium text-stone-900">{doc.title}</h4>
-                              <span className="text-xs text-stone-400 uppercase tracking-widest font-bold">PDF Guide</span>
+                              <h4 className="font-medium text-stone-900 dark:text-slate-200 transition-colors">{doc.title}</h4>
+                              <span className="text-xs text-stone-400 dark:text-slate-500 uppercase tracking-widest font-bold transition-colors">PDF Guide</span>
                             </div>
                           </div>
                         </a>
@@ -275,20 +269,20 @@ export default function DynamicLearningWorkspace() {
 
                 {/* 4. PRACTICE QUESTION BANK */}
                 {unitQuestions.length > 0 && currentQuestion && (
-                  <div className="bg-white border border-stone-200 rounded-3xl p-6 sm:p-10 shadow-sm relative overflow-hidden">
+                  <div className="bg-white dark:bg-[#282C3D] border border-stone-200 dark:border-slate-700/80 rounded-3xl p-6 sm:p-10 shadow-sm relative overflow-hidden transition-colors">
                     
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4 border-b border-stone-100 pb-6">
-                      <h3 className="text-xl font-serif text-stone-900 flex items-center gap-3">
-                        <CheckCircle2 className="text-emerald-500" size={24} /> 
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4 border-b border-stone-100 dark:border-slate-700/50 pb-6 transition-colors">
+                      <h3 className="text-xl font-serif text-stone-900 dark:text-slate-100 flex items-center gap-3 transition-colors">
+                        <CheckCircle2 className="text-emerald-500 dark:text-blue-400" size={24} /> 
                         Knowledge Check
                       </h3>
                       <div className="flex items-center gap-3">
-                        <span className="text-sm font-mono text-stone-400">
+                        <span className="text-sm font-mono text-stone-400 dark:text-slate-500 transition-colors">
                           {qIndex + 1} / {unitQuestions.length}
                         </span>
-                        <div className="w-24 h-1.5 bg-stone-100 rounded-full overflow-hidden">
+                        <div className="w-24 h-1.5 bg-stone-100 dark:bg-[#151821] rounded-full overflow-hidden transition-colors">
                           <motion.div 
-                            className="h-full bg-emerald-400" 
+                            className="h-full bg-emerald-400 dark:bg-blue-500" 
                             initial={{ width: 0 }}
                             animate={{ width: `${((qIndex + 1) / unitQuestions.length) * 100}%` }}
                             transition={{ duration: 0.3 }}
@@ -307,7 +301,7 @@ export default function DynamicLearningWorkspace() {
                           transition={{ duration: 0.2, ease: "easeOut" }}
                           className="w-full"
                         >
-                          <p className="text-lg font-medium text-stone-800 mb-8 leading-relaxed">
+                          <p className="text-lg font-medium text-stone-800 dark:text-slate-200 mb-8 leading-relaxed transition-colors">
                             {currentQuestion.text}
                           </p>
 
@@ -316,7 +310,11 @@ export default function DynamicLearningWorkspace() {
                               <input
                                 type="number"
                                 disabled={isAnswered}
-                                className={`p-4 rounded-xl border-2 font-mono text-lg w-40 transition-colors ${isAnswered ? (isCorrect ? 'border-emerald-500 bg-emerald-50' : 'border-red-400 bg-red-50') : 'border-stone-200 focus:border-stone-400 outline-none'}`}
+                                className={`p-4 rounded-xl border-2 font-mono text-lg w-40 transition-colors outline-none ${
+                                  isAnswered 
+                                    ? (isCorrect ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 dark:text-emerald-300' : 'border-red-400 bg-red-50 dark:bg-red-900/20 dark:text-red-300') 
+                                    : 'border-stone-200 dark:border-slate-600 bg-white dark:bg-[#151821] text-stone-800 dark:text-slate-200 focus:border-stone-400 dark:focus:border-slate-400'
+                                }`}
                                 placeholder="Value..."
                                 onBlur={(e) => !isAnswered && e.target.value && handlePracticeSelect(currentQuestion.questionId, e.target.value)}
                                 onKeyDown={(e) => {
@@ -325,18 +323,18 @@ export default function DynamicLearningWorkspace() {
                                   }
                                 }}
                               />
-                              {isAnswered && (isCorrect ? <CheckCircle2 className="text-emerald-500" /> : <XCircle className="text-red-500" />)}
+                              {isAnswered && (isCorrect ? <CheckCircle2 className="text-emerald-500 dark:text-emerald-400" /> : <XCircle className="text-red-500 dark:text-red-400" />)}
                             </div>
                           ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               {currentQuestion.options?.map((opt: any) => {
                                 const isSelected = answeredValue === opt.id;
-                                let btnStyle = "border-stone-200 text-stone-600 hover:border-emerald-300 hover:bg-emerald-50/30";
+                                let btnStyle = "border-stone-200 dark:border-slate-700 text-stone-600 dark:text-slate-300 hover:border-emerald-300 dark:hover:border-blue-500 hover:bg-emerald-50/30 dark:hover:bg-[#151821]";
                                 
                                 if (isAnswered) {
-                                  if (currentQuestion.correctAnswers?.includes(opt.id)) btnStyle = "border-emerald-500 bg-emerald-50 text-emerald-800";
-                                  else if (isSelected) btnStyle = "border-red-400 bg-red-50 text-red-800";
-                                  else btnStyle = "border-stone-100 text-stone-300 opacity-50";
+                                  if (currentQuestion.correctAnswers?.includes(opt.id)) btnStyle = "border-emerald-500 dark:border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-300";
+                                  else if (isSelected) btnStyle = "border-red-400 dark:border-red-500 bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300";
+                                  else btnStyle = "border-stone-100 dark:border-slate-800 text-stone-300 dark:text-slate-600 opacity-50";
                                 }
                                 
                                 return (
@@ -347,7 +345,7 @@ export default function DynamicLearningWorkspace() {
                                     className={`p-4 text-left rounded-xl border-2 transition-all font-mono text-sm flex items-center justify-between ${btnStyle}`}
                                   >
                                     <span><span className="opacity-50 mr-2">{opt.id}.</span>{opt.text}</span>
-                                    {isAnswered && currentQuestion.correctAnswers?.includes(opt.id) && <CheckCircle2 size={18} className="text-emerald-500" />}
+                                    {isAnswered && currentQuestion.correctAnswers?.includes(opt.id) && <CheckCircle2 size={18} className="text-emerald-500 dark:text-emerald-400" />}
                                   </button>
                                 );
                               })}
@@ -358,10 +356,14 @@ export default function DynamicLearningWorkspace() {
                             <motion.div
                               initial={{ opacity: 0, y: 10, height: 0 }}
                               animate={{ opacity: 1, y: 0, height: 'auto' }}
-                              className={`mt-6 p-5 rounded-xl border overflow-hidden ${isCorrect ? 'bg-emerald-50/50 border-emerald-100' : 'bg-stone-50 border-stone-200'}`}
+                              className={`mt-6 p-5 rounded-xl border overflow-hidden transition-colors ${
+                                isCorrect 
+                                  ? 'bg-emerald-50/50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-800/30' 
+                                  : 'bg-stone-50 dark:bg-[#151821] border-stone-200 dark:border-slate-700/50'
+                              }`}
                             >
-                              <h4 className="text-xs font-bold tracking-widest uppercase text-stone-500 mb-2">Explanation</h4>
-                              <p className="text-sm text-stone-700 font-medium leading-relaxed">
+                              <h4 className="text-xs font-bold tracking-widest uppercase text-stone-500 dark:text-slate-500 mb-2 transition-colors">Explanation</h4>
+                              <p className="text-sm text-stone-700 dark:text-slate-300 font-medium leading-relaxed transition-colors">
                                 {currentQuestion.explanation}
                               </p>
                             </motion.div>
@@ -371,11 +373,11 @@ export default function DynamicLearningWorkspace() {
                       </AnimatePresence>
                     </div>
 
-                    <div className="mt-8 pt-6 border-t border-stone-100 flex items-center justify-between">
+                    <div className="mt-8 pt-6 border-t border-stone-100 dark:border-slate-700/50 flex items-center justify-between transition-colors">
                       <button 
                         onClick={() => handleNavigateQuestion(unit.unitId, 'prev', unitQuestions.length)}
                         disabled={qIndex === 0}
-                        className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-stone-500 hover:text-stone-900 hover:bg-stone-50 disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-stone-500 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-200 hover:bg-stone-50 dark:hover:bg-[#151821] disabled:opacity-30 disabled:pointer-events-none transition-colors"
                       >
                         <ChevronLeft size={16} /> Previous
                       </button>
@@ -384,7 +386,7 @@ export default function DynamicLearningWorkspace() {
                         {qIndex < unitQuestions.length - 1 && !answeredQuestions[currentQuestion.questionId] && (
                            <button 
                              onClick={() => handleNavigateQuestion(unit.unitId, 'next', unitQuestions.length)}
-                             className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-stone-400 hover:text-stone-700 transition-colors"
+                             className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-stone-400 dark:text-slate-500 hover:text-stone-700 dark:hover:text-slate-300 transition-colors"
                            >
                              Skip <SkipForward size={14} />
                            </button>
@@ -392,7 +394,7 @@ export default function DynamicLearningWorkspace() {
                         <button 
                           onClick={() => handleNavigateQuestion(unit.unitId, 'next', unitQuestions.length)}
                           disabled={qIndex === unitQuestions.length - 1}
-                          className="flex items-center gap-2 px-5 py-2 bg-stone-900 text-white rounded-lg text-sm font-medium hover:bg-stone-800 disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                          className="flex items-center gap-2 px-5 py-2 bg-stone-900 dark:bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-stone-800 dark:hover:bg-blue-500 disabled:opacity-30 disabled:pointer-events-none transition-colors"
                         >
                           Next <ChevronRight size={16} />
                         </button>
@@ -408,6 +410,6 @@ export default function DynamicLearningWorkspace() {
         })}
       </div>
 
-    </motion.div>
+    </div>
   );
 }

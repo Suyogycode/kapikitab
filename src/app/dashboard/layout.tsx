@@ -15,13 +15,13 @@ export const DashboardContext = React.createContext({
 
 const LiquidGlassMenu = ({ items, activeItem, setActiveItem, isHorizontal = true }: any) => {
   return (
-    <div className={`flex ${isHorizontal ? 'flex-row space-x-2 overflow-x-auto no-scrollbar' : 'flex-col space-y-2'} p-2 bg-white/70 backdrop-blur-2xl border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-4xl`}>
+    <div className={`flex ${isHorizontal ? 'flex-row space-x-2 overflow-x-auto no-scrollbar' : 'flex-col space-y-2'} p-2 bg-white/70 dark:bg-[#282C3D]/80 backdrop-blur-2xl border border-white/40 dark:border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-4xl transition-colors duration-500`}>
       {items.map((item: any) => {
         const isActive = activeItem === item.id;
         return (
           <button key={item.id} onClick={() => setActiveItem(item.id)} className="relative px-4 sm:px-6 py-2 sm:py-3 rounded-full text-xs sm:text-sm font-light font-serif tracking-wider transition-colors z-10 whitespace-nowrap">
-            {isActive && <motion.div layoutId={`liquidHighlight-${items[0].id}`} className="absolute inset-0 bg-white/90 shadow-sm border border-white/50 rounded-full -z-10" transition={{ type: "spring", stiffness: 400, damping: 30 }} />}
-            <span className={isActive ? 'text-stone-800 font-medium' : 'text-stone-400 hover:text-stone-600'}>{item.label}</span>
+            {isActive && <motion.div layoutId={`liquidHighlight-${items[0].id}`} className="absolute inset-0 bg-white/90 dark:bg-slate-700/80 shadow-sm border border-white/50 dark:border-slate-600/50 rounded-full -z-10" transition={{ type: "spring", stiffness: 400, damping: 30 }} />}
+            <span className={isActive ? 'text-stone-800 dark:text-slate-100 font-medium' : 'text-stone-400 dark:text-slate-400 hover:text-stone-600 dark:hover:text-slate-200'}>{item.label}</span>
           </button>
         );
       })}
@@ -56,20 +56,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   
   const [activeSubject, setActiveSubject] = useState(() => allowedSubjects[0]);
 
-  // Load the persisted subject from local storage on mount
+  // Sync Global Theme & Subject on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const savedSubject = localStorage.getItem('kapikitab-active-subject');
-      // Ensure the saved subject is actually valid for their current class
       if (savedSubject && allowedSubjects.includes(savedSubject)) {
         setActiveSubject(savedSubject);
       } else if (!allowedSubjects.includes(activeSubject)) {
         setActiveSubject(allowedSubjects[0]);
       }
+
+      // Check if user set Dark Mode previously in the Profile Page
+      const isDarkMode = localStorage.getItem('kapikitab-theme') === 'dark';
+      if (isDarkMode) {
+        document.documentElement.classList.add('dark');
+      }
     }
   }, [currentClassId, allowedSubjects, activeSubject]);
 
-  // Custom handler to update state and persist to storage simultaneously 
   const handleSubjectChange = (id: string) => {
     setActiveSubject(id);
     if (typeof window !== 'undefined') {
@@ -80,9 +84,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[#FDFCF8] text-stone-800">
-        <Loader2 className="animate-spin text-emerald-600 mb-4" size={40} strokeWidth={1} />
-        <h2 className="font-serif text-xl sm:text-2xl font-light tracking-widest text-stone-400">Syncing...</h2>
+      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[#FDFCF8] dark:bg-[#1C1F2B] text-stone-800 transition-colors duration-500">
+        <Loader2 className="animate-spin text-emerald-600 dark:text-blue-400 mb-4" size={40} strokeWidth={1} />
+        <h2 className="font-serif text-xl sm:text-2xl font-light tracking-widest text-stone-400 dark:text-slate-500">Syncing...</h2>
       </div>
     );
   }
@@ -98,24 +102,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   ];
 
   return (
-    <div className="h-screen w-full bg-[#FDFCF8] overflow-hidden flex flex-col relative selection:bg-emerald-100 overscroll-none">
+    <div className="h-screen w-full bg-[#FDFCF8] dark:bg-[#1C1F2B] overflow-hidden flex flex-col relative selection:bg-emerald-100 dark:selection:bg-blue-500/30 overscroll-none transition-colors duration-500">
       
       <header className="absolute top-0 w-full z-50 pointer-events-none p-6 lg:p-10 flex justify-between items-start">
         
         <div className="pointer-events-auto relative flex flex-col items-center space-y-2">
           <Link href="/dashboard/profile">
-            <button className="h-14 w-14 sm:h-16 sm:w-16 bg-white/60 backdrop-blur-2xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-full flex items-center justify-center transition-all duration-500 hover:shadow-[0_20px_40px_rgb(0,0,0,0.06)] hover:-translate-y-1 z-20">
-              <User className={`${pathname === '/dashboard/profile' ? 'text-emerald-700' : 'text-stone-500'} w-5 h-5 sm:w-6 sm:h-6`} strokeWidth={1.5} />
+            <button className="h-14 w-14 sm:h-16 sm:w-16 bg-white/60 dark:bg-[#282C3D]/80 backdrop-blur-2xl border border-white/60 dark:border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-full flex items-center justify-center transition-all duration-500 hover:shadow-[0_20px_40px_rgb(0,0,0,0.06)] hover:-translate-y-1 z-20">
+              <User className={`${pathname === '/dashboard/profile' ? 'text-emerald-700 dark:text-blue-400' : 'text-stone-500 dark:text-slate-400'} w-5 h-5 sm:w-6 sm:h-6 transition-colors`} strokeWidth={1.5} />
             </button>
           </Link>
-          <span className="text-[9px] sm:text-[10px] font-serif font-light text-stone-400 tracking-[0.2em] uppercase">Profile</span>
+          <span className="text-[9px] sm:text-[10px] font-serif font-light text-stone-400 dark:text-slate-500 tracking-[0.2em] uppercase transition-colors">Profile</span>
         </div>
 
         <div className="pointer-events-auto relative flex flex-col items-center space-y-2">
-          <button onClick={() => setShowSubject(!showSubject)} className="h-14 w-14 sm:h-16 sm:w-16 bg-white/60 backdrop-blur-2xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-full flex items-center justify-center transition-all duration-500 hover:shadow-[0_20px_40px_rgb(0,0,0,0.06)] hover:-translate-y-1 z-20">
-            <Book className="text-emerald-700 w-5 h-5 sm:w-6 sm:h-6" strokeWidth={1.5} />
+          <button onClick={() => setShowSubject(!showSubject)} className="h-14 w-14 sm:h-16 sm:w-16 bg-white/60 dark:bg-[#282C3D]/80 backdrop-blur-2xl border border-white/60 dark:border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-full flex items-center justify-center transition-all duration-500 hover:shadow-[0_20px_40px_rgb(0,0,0,0.06)] hover:-translate-y-1 z-20">
+            <Book className="text-emerald-700 dark:text-blue-400 w-5 h-5 sm:w-6 sm:h-6 transition-colors" strokeWidth={1.5} />
           </button>
-          <span className="text-[9px] sm:text-[10px] font-serif font-light text-stone-400 tracking-[0.2em] uppercase">Subjects</span>
+          <span className="text-[9px] sm:text-[10px] font-serif font-light text-stone-400 dark:text-slate-500 tracking-[0.2em] uppercase transition-colors">Subjects</span>
           
           <AnimatePresence>
             {showSubject && (
@@ -127,26 +131,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </header>
 
-      {/* Passed the new handleSubjectChange to Context so child components can safely trigger storage updates if needed */}
       <DashboardContext.Provider value={{ currentClassId, activeSubject, setActiveSubject: handleSubjectChange }}>
         <main className="flex-1 relative w-full h-full pt-20 pb-28 sm:pt-24 sm:pb-32 overflow-y-auto no-scrollbar overscroll-none">
           {children}
         </main>
       </DashboardContext.Provider>
 
-      <nav className="fixed bottom-0 w-full z-50 pointer-events-none px-4 sm:px-6 pb-6 sm:pb-8 pt-20 bg-linear-to-t from-[#FDFCF8] via-[#FDFCF8]/80 to-transparent">
-        <div className="max-w-md mx-auto pointer-events-auto bg-white/70 backdrop-blur-2xl border border-white/60 shadow-[0_20px_50px_rgb(0,0,0,0.05)] rounded-[2.5rem] flex justify-between items-center px-4 py-3 relative">
+      <nav className="fixed bottom-0 w-full z-50 pointer-events-none px-4 sm:px-6 pb-6 sm:pb-8 pt-20 bg-linear-to-t from-[#FDFCF8] dark:from-[#1C1F2B] via-[#FDFCF8]/80 dark:via-[#1C1F2B]/80 to-transparent transition-colors duration-500">
+        <div className="max-w-md mx-auto pointer-events-auto bg-white/70 dark:bg-[#282C3D]/80 backdrop-blur-2xl border border-white/60 dark:border-slate-700/50 shadow-[0_20px_50px_rgb(0,0,0,0.05)] rounded-[2.5rem] flex justify-between items-center px-4 py-3 relative transition-colors duration-500">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href || (pathname === '/dashboard' && item.id === 'lesson'); 
             
             return (
               <Link href={item.href} key={item.id} className="relative flex flex-col items-center justify-center w-12 h-12 sm:w-14 sm:h-14 group">
-                <motion.div animate={{ scale: isActive ? 1.1 : 1, y: isActive ? -4 : 0 }} transition={{ type: "spring", stiffness: 400, damping: 25 }} className={`${isActive ? 'text-emerald-700' : 'text-stone-400 group-hover:text-stone-500 transition-colors duration-500'}`}>
+                <motion.div animate={{ scale: isActive ? 1.1 : 1, y: isActive ? -4 : 0 }} transition={{ type: "spring", stiffness: 400, damping: 25 }} className={`${isActive ? 'text-emerald-700 dark:text-blue-400' : 'text-stone-400 dark:text-slate-400 group-hover:text-stone-500 dark:group-hover:text-slate-300 transition-colors duration-500'}`}>
                   <Icon className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={isActive ? 1.5 : 1.5} />
                 </motion.div>
                 <AnimatePresence>
-                  {isActive && <motion.span initial={{ opacity: 0, y: 10, scale: 0.5 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 5, scale: 0.5 }} className="absolute -bottom-1 text-[9px] font-serif tracking-[0.1em] text-emerald-700">{item.label}</motion.span>}
+                  {isActive && <motion.span initial={{ opacity: 0, y: 10, scale: 0.5 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 5, scale: 0.5 }} className="absolute -bottom-1 text-[9px] font-serif tracking-[0.1em] text-emerald-700 dark:text-blue-400">{item.label}</motion.span>}
                 </AnimatePresence>
               </Link>
             );

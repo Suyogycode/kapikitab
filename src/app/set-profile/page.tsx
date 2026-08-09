@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ArrowLeft, Check, Sparkles, ChevronDown } from 'lucide-react';
+import { ChevronRight, ArrowLeft, Check, Sparkles, ChevronDown, Sun, Moon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 
@@ -24,7 +24,7 @@ type Step = {
 const CuteMascot = ({ isTalking, className = "w-48 h-48" }: { isTalking: boolean, className?: string }) => (
   <motion.svg 
     viewBox="0 0 200 200" 
-    className={`drop-shadow-2xl ${className}`}
+    className={`drop-shadow-[0_0_15px_rgba(255,255,255,0.4)] dark:drop-shadow-[0_0_20px_rgba(96,165,250,0.3)] transition-all duration-500 ${className}`}
     animate={{ y: [0, -10, 0] }} 
     transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
   >
@@ -71,6 +71,21 @@ export default function SetProfile() {
   const [isTalking, setIsTalking] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [entranceDropdownOpen, setEntranceDropdownOpen] = useState(false);
+  
+  // Theme State Setup
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDark]);
+
+  const toggleTheme = () => {
+    setIsDark((prev) => !prev);
+  };
 
   const steps: Step[] = [
     {
@@ -169,16 +184,12 @@ export default function SetProfile() {
         if (res.ok) {
           setMascotText("All set. Redirecting to dashboard...");
           
-          // FORMAT THE CLASS ID FOR NEXTAUTH
           const selectedClass = answers['class'];
           if (selectedClass && typeof selectedClass === 'string') {
             const formattedClassId = 'c' + selectedClass.replace('Class ', '').trim();
-            
-            // FORCE NEXTAUTH SESSION UPDATE
             await update({ classId: formattedClassId });
           }
 
-          // HARD REDIRECT TO DASHBOARD
           setTimeout(() => {
             window.location.href = '/dashboard';
           }, 1000);
@@ -197,7 +208,6 @@ export default function SetProfile() {
   const currentData = steps[currentStep];
   const progressPercentage = ((currentStep + 1) / steps.length) * 100;
 
-  // Bulletproof logic for showing the Continue button
   const currentAnswer = answers[currentData.id];
   const hasAnswer = Array.isArray(currentAnswer) ? currentAnswer.length > 0 : !!currentAnswer;
   const isEntranceSelected = Array.isArray(currentAnswer) ? currentAnswer.includes('Entrance exams') : currentAnswer === 'Entrance exams';
@@ -205,23 +215,65 @@ export default function SetProfile() {
   const showNextButton = hasAnswer && (!isEntranceSelected || hasEntranceDetails);
 
   return (
-    <div className="min-h-screen bg-[#FDFCF8] flex flex-col lg:flex-row font-sans text-stone-800 overflow-x-hidden">
+    <div className="min-h-screen bg-[#FDFCF8] dark:bg-[#1C1F2B] transition-colors duration-500 flex flex-col lg:flex-row font-sans text-stone-800 dark:text-slate-200 overflow-x-hidden relative">
       
-      {/* LEFT COLUMN: Mascot & Progress Indicator (Restored Original Colors) */}
-      <div className="w-full lg:w-5/12 bg-kapi-dark text-white p-5 lg:p-10 flex flex-col justify-between relative overflow-hidden shrink-0 shadow-md lg:shadow-none z-20">
+      {/* DESKTOP ONLY: Absolute Toggle Button positioned top-right */}
+      <button 
+        onClick={toggleTheme} 
+        className="hidden lg:flex absolute top-8 right-8 w-14 h-8 items-center bg-stone-200 dark:bg-[#0E1017] rounded-full p-1 transition-colors duration-300 z-50"
+        aria-label="Toggle Dark Mode"
+      >
+        <motion.div
+          layout
+          className="w-6 h-6 bg-white dark:bg-[#282C3D] rounded-full shadow-sm flex items-center justify-center"
+          animate={{ x: isDark ? 24 : 0 }}
+          transition={{ type: "spring", stiffness: 700, damping: 30 }}
+        >
+          {isDark ? (
+            <Moon className="w-3.5 h-3.5 text-blue-400" strokeWidth={2.5} />
+          ) : (
+            <Sun className="w-3.5 h-3.5 text-amber-500" strokeWidth={2.5} />
+          )}
+        </motion.div>
+      </button>
+
+      {/* LEFT COLUMN: Mascot & Progress Indicator - Padding restored to p-5 */}
+      <div className="w-full lg:w-5/12 bg-kapi-dark dark:bg-[#151821] transition-colors duration-500 text-white p-5 lg:p-10 flex flex-col justify-between relative overflow-hidden shrink-0 shadow-md lg:shadow-none z-20">
         <div className="absolute top-[-10%] left-[-20%] w-[80%] h-[80%] bg-white/5 rounded-full blur-3xl pointer-events-none" />
         
+        {/* HEADER FLEXBOX: Holds Back Arrow, Mobile Toggle, and Brand Name */}
         <div className="relative z-10 flex justify-between items-center mb-4 lg:mb-0">
-          {currentStep > 0 ? (
+          <div className="flex items-center gap-3">
+            {currentStep > 0 && (
+              <button 
+                onClick={() => setCurrentStep(prev => prev - 1)}
+                className="p-1.5 lg:p-2 bg-white/10 hover:bg-white/20 rounded-full backdrop-blur-md transition-colors"
+              >
+                <ArrowLeft size={18} className="lg:w-5 lg:h-5" />
+              </button>
+            )}
+            
+            {/* MOBILE ONLY: Inline Toggle Button */}
             <button 
-              onClick={() => setCurrentStep(prev => prev - 1)}
-              className="p-1.5 lg:p-2 bg-white/10 hover:bg-white/20 rounded-full backdrop-blur-md transition-colors"
+              onClick={toggleTheme} 
+              className="lg:hidden relative w-14 h-8 flex items-center bg-black/20 dark:bg-black/40 rounded-full p-1 transition-colors duration-300"
+              aria-label="Toggle Dark Mode"
             >
-              <ArrowLeft size={18} className="lg:w-5 lg:h-5" />
+              <motion.div
+                layout
+                className="w-6 h-6 bg-white dark:bg-[#282C3D] rounded-full shadow-sm flex items-center justify-center"
+                animate={{ x: isDark ? 24 : 0 }}
+                transition={{ type: "spring", stiffness: 700, damping: 30 }}
+              >
+                {isDark ? (
+                  <Moon className="w-3.5 h-3.5 text-blue-400" strokeWidth={2.5} />
+                ) : (
+                  <Sun className="w-3.5 h-3.5 text-amber-500" strokeWidth={2.5} />
+                )}
+              </motion.div>
             </button>
-          ) : (
-            <div className="w-8" /> 
-          )}
+          </div>
+          
           <span className="font-serif font-bold text-lg lg:text-xl tracking-tight text-white/90">Kapikitab.</span>
         </div>
 
@@ -232,21 +284,21 @@ export default function SetProfile() {
             key={mascotText}
             initial={{ opacity: 0, y: 10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            className="lg:mt-8 bg-white text-stone-800 p-3 lg:p-5 rounded-2xl lg:rounded-3xl lg:rounded-tl-none shadow-xl border border-stone-100 w-full lg:max-w-xs relative text-left lg:text-center"
+            className="lg:mt-8 bg-white dark:bg-[#282C3D] text-stone-800 dark:text-slate-200 p-3 lg:p-5 rounded-2xl lg:rounded-3xl lg:rounded-tl-none shadow-xl border border-stone-100 dark:border-slate-700/50 w-full lg:max-w-xs relative text-left lg:text-center transition-colors duration-500"
           >
-            <Sparkles size={14} className="absolute -top-1.5 -right-1.5 lg:-top-2 lg:-right-2 text-kapi-green hidden lg:block" />
+            <Sparkles size={14} className="absolute -top-1.5 -right-1.5 lg:-top-2 lg:-right-2 text-kapi-green dark:text-blue-400 hidden lg:block" />
             <p className="font-medium text-xs sm:text-sm leading-snug lg:leading-relaxed">{mascotText}</p>
           </motion.div>
         </div>
 
         <div className="relative z-10 mt-6 lg:mt-12">
-          <div className="flex justify-between text-[10px] lg:text-xs font-medium text-kapi-green mb-2 lg:mb-3 uppercase tracking-wider">
+          <div className="flex justify-between text-[10px] lg:text-xs font-medium text-kapi-green dark:text-blue-400 mb-2 lg:mb-3 uppercase tracking-wider transition-colors duration-500">
             <span>Profile Setup</span>
             <span>{Math.round(progressPercentage)}%</span>
           </div>
-          <div className="h-1.5 lg:h-2 w-full bg-black/50 rounded-full overflow-hidden">
+          <div className="h-1.5 lg:h-2 w-full bg-black/50 dark:bg-slate-900/50 rounded-full overflow-hidden">
             <motion.div 
-              className="h-full bg-kapi-green rounded-full"
+              className="h-full bg-kapi-green dark:bg-blue-500 rounded-full transition-colors duration-500"
               initial={{ width: 0 }}
               animate={{ width: `${progressPercentage}%` }}
               transition={{ duration: 0.5, ease: "easeOut" }}
@@ -266,10 +318,10 @@ export default function SetProfile() {
             transition={{ duration: 0.3, ease: "easeOut" }}
             className="w-full max-w-xl mx-auto"
           >
-            <span className="text-kapi-green font-bold tracking-widest text-[10px] lg:text-xs uppercase mb-3 block">
+            <span className="text-kapi-green dark:text-blue-400 font-bold tracking-widest text-[10px] lg:text-xs uppercase mb-3 block transition-colors duration-500">
               Step {currentStep + 1} of {steps.length}
             </span>
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-serif font-medium text-stone-900 leading-tight mb-6 lg:mb-10">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-serif font-medium text-stone-900 dark:text-slate-100 leading-tight mb-6 lg:mb-10 transition-colors duration-500">
               {currentData.question}
             </h2>
 
@@ -281,14 +333,14 @@ export default function SetProfile() {
                   <select
                     value={(answers[currentData.id] as string) || ""}
                     onChange={(e) => handleSelect(e.target.value)}
-                    className="w-full appearance-none p-4 lg:p-6 rounded-2xl lg:rounded-3xl border-2 border-stone-200 bg-white text-stone-800 text-lg font-medium transition-colors focus:outline-none focus:border-kapi-green hover:border-emerald-300"
+                    className="w-full appearance-none p-4 lg:p-6 rounded-2xl lg:rounded-3xl border-2 border-stone-200 dark:border-slate-700/50 bg-white dark:bg-[#282C3D] text-stone-800 dark:text-slate-200 text-lg font-medium transition-colors focus:outline-none focus:border-kapi-green dark:focus:border-blue-400 hover:border-emerald-300 dark:hover:border-blue-500"
                   >
                     <option value="" disabled>Select your state</option>
                     {currentData.options.map((opt) => (
                       <option key={opt.id} value={opt.id}>{opt.label}</option>
                     ))}
                   </select>
-                  <ChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" />
+                  <ChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 text-stone-400 dark:text-slate-500 pointer-events-none" />
                 </div>
               )}
 
@@ -306,22 +358,22 @@ export default function SetProfile() {
                       onClick={() => handleSelect(option.id)}
                       className={`w-full text-left p-4 lg:p-6 rounded-2xl lg:rounded-3xl border-2 transition-all duration-300 flex items-center justify-between group ${
                         isSelected 
-                          ? 'border-kapi-green bg-emerald-50/30 shadow-sm' 
-                          : 'border-stone-200 hover:border-emerald-300 bg-white hover:shadow-sm'
+                          ? 'border-kapi-green dark:border-blue-400 bg-emerald-50/30 dark:bg-blue-900/20 shadow-sm' 
+                          : 'border-stone-200 dark:border-slate-700/50 hover:border-emerald-300 dark:hover:border-blue-500 bg-white dark:bg-[#282C3D] hover:shadow-sm'
                       }`}
                     >
-                      <h3 className={`text-lg font-medium ${isSelected ? 'text-emerald-900' : 'text-stone-800'}`}>
+                      <h3 className={`text-lg font-medium transition-colors ${isSelected ? 'text-emerald-900 dark:text-blue-100' : 'text-stone-800 dark:text-slate-200'}`}>
                         {option.label}
                       </h3>
                       
                       <div className={`shrink-0 h-5 w-5 lg:h-6 lg:w-6 rounded-full border flex items-center justify-center transition-colors ${
-                        isSelected ? 'border-kapi-green bg-kapi-green' : 'border-stone-300 group-hover:border-kapi-green'
+                        isSelected ? 'border-kapi-green dark:border-blue-400 bg-kapi-green dark:bg-blue-400' : 'border-stone-300 dark:border-slate-600 group-hover:border-kapi-green dark:group-hover:border-blue-400'
                       }`}>
                         {isSelected && <Check size={12} className="text-white lg:w-3.5 lg:h-3.5" />}
                       </div>
                     </motion.button>
 
-                    {/* NESTED ENTRANCE EXAM MULTI-SELECT DROPDOWN - Fixed Overflow & Animation */}
+                    {/* NESTED ENTRANCE EXAM MULTI-SELECT DROPDOWN */}
                     <AnimatePresence>
                       {isSelected && option.id === 'Entrance exams' && (
                         <motion.div 
@@ -330,10 +382,10 @@ export default function SetProfile() {
                           exit={{ opacity: 0, height: 0 }}
                           className="mt-3 px-2 overflow-hidden"
                         >
-                          <div className="bg-stone-50 border border-stone-200 rounded-2xl p-4">
+                          <div className="bg-stone-50 dark:bg-[#222534] border border-stone-200 dark:border-slate-700/50 rounded-2xl p-4 transition-colors duration-500">
                             <button
                               onClick={() => setEntranceDropdownOpen(!entranceDropdownOpen)}
-                              className="w-full flex justify-between items-center text-left bg-white p-3 rounded-xl border border-stone-200 text-stone-700 font-medium"
+                              className="w-full flex justify-between items-center text-left bg-white dark:bg-[#282C3D] p-3 rounded-xl border border-stone-200 dark:border-slate-600 text-stone-700 dark:text-slate-300 font-medium transition-colors duration-300"
                             >
                               <span className="truncate pr-4">
                                 {(answers.entranceExams as string[])?.length > 0 
@@ -349,7 +401,7 @@ export default function SetProfile() {
                                   initial={{ opacity: 0, height: 0 }}
                                   animate={{ opacity: 1, height: 'auto' }}
                                   exit={{ opacity: 0, height: 0 }}
-                                  className="mt-2 bg-white border border-stone-200 rounded-xl shadow-sm overflow-hidden flex flex-col p-2 space-y-1"
+                                  className="mt-2 bg-white dark:bg-[#282C3D] border border-stone-200 dark:border-slate-600 rounded-xl shadow-sm overflow-hidden flex flex-col p-2 space-y-1 transition-colors duration-300"
                                 >
                                   {ENTRANCE_EXAMS.map(exam => {
                                     const isExamSelected = (answers.entranceExams as string[] || []).includes(exam);
@@ -361,11 +413,11 @@ export default function SetProfile() {
                                           handleEntranceSelect(exam);
                                         }}
                                         className={`w-full text-left p-3 rounded-lg flex justify-between items-center transition-colors ${
-                                          isExamSelected ? 'bg-emerald-50 text-emerald-800 font-medium' : 'hover:bg-stone-50 text-stone-700'
+                                          isExamSelected ? 'bg-emerald-50 dark:bg-blue-900/30 text-emerald-800 dark:text-blue-200 font-medium' : 'hover:bg-stone-50 dark:hover:bg-[#34394F] text-stone-700 dark:text-slate-300'
                                         }`}
                                       >
                                         <span>{exam}</span>
-                                        {isExamSelected && <Check size={16} className="text-emerald-600" />}
+                                        {isExamSelected && <Check size={16} className="text-emerald-600 dark:text-blue-400" />}
                                       </button>
                                     );
                                   })}
@@ -392,7 +444,7 @@ export default function SetProfile() {
                   <button 
                     onClick={handleNext}
                     disabled={isSaving}
-                    className="inline-flex items-center space-x-2 bg-stone-900 text-white px-6 py-3 lg:px-8 lg:py-4 rounded-full text-sm lg:text-base font-medium hover:bg-stone-800 transition-colors shadow-lg shadow-stone-900/10 disabled:opacity-50"
+                    className="inline-flex items-center space-x-2 bg-stone-900 dark:bg-blue-500 text-white px-6 py-3 lg:px-8 lg:py-4 rounded-full text-sm lg:text-base font-medium hover:bg-stone-800 dark:hover:bg-blue-600 transition-colors shadow-lg shadow-stone-900/10 dark:shadow-blue-900/20 disabled:opacity-50"
                   >
                     <span>
                       {isSaving ? 'Saving...' : currentStep === steps.length - 1 ? 'Complete Profile' : 'Continue'}

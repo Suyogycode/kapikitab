@@ -10,7 +10,6 @@ type Question = {
   correctAnswer: string;
 };
 
-// Expanded fallback database in case the API is blocked or offline
 const FALLBACK_DB = [
   { questionText: "What is the square root of 144?", options: ["10", "12", "14", "16"], correctAnswer: "12" },
   { questionText: "What is 15% of 200?", options: ["20", "30", "40", "50"], correctAnswer: "30" },
@@ -24,7 +23,6 @@ const FALLBACK_DB = [
   { questionText: "Which programming language is known as the language of the web?", options: ["Python", "C++", "Java", "JavaScript"], correctAnswer: "JavaScript" }
 ];
 
-// Helper to decode weird HTML entities from the free API
 const decodeHTML = (html: string) => {
   return html.replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/&amp;/g, "&");
 };
@@ -40,7 +38,6 @@ export default function QuizArena() {
   useEffect(() => {
     const startMatchmaking = async () => {
       try {
-        // Randomly pick between Science (17), Computers (18), and Math (19) to ensure fresh questions
         const categories = [17, 18, 19];
         const randomCategory = categories[Math.floor(Math.random() * categories.length)];
         
@@ -52,7 +49,6 @@ export default function QuizArena() {
         if (data && data.results && data.results.length > 0) {
           formattedQuestions = data.results.map((q: any) => {
             const options = [...q.incorrect_answers, q.correct_answer];
-            // Shuffle options
             options.sort(() => Math.random() - 0.5);
             return {
               questionText: decodeHTML(q.question), 
@@ -68,10 +64,8 @@ export default function QuizArena() {
         setTimeout(() => setGameState('playing'), 2500);
       } catch (error) {
         console.warn("API limit reached or offline, using shuffled fallback database.");
-        // Shuffle the fallback DB and pick 5 random questions
         const shuffledFallback = [...FALLBACK_DB].sort(() => Math.random() - 0.5).slice(0, 5);
         
-        // Shuffle the options inside those questions
         const preparedFallback = shuffledFallback.map(q => ({
           ...q,
           options: [...q.options].sort(() => Math.random() - 0.5)
@@ -111,14 +105,14 @@ export default function QuizArena() {
 
   if (gameState === 'matchmaking') {
     return (
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center h-full text-stone-600">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center h-full text-stone-600 dark:text-slate-400 transition-colors duration-500">
         <div className="relative mb-6 sm:mb-8">
-          <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 3, ease: "linear" }} className="absolute inset-0 rounded-full border-t-2 border-emerald-500 opacity-20" />
-          <div className="h-20 w-20 sm:h-24 sm:w-24 bg-stone-100 rounded-full flex items-center justify-center border border-stone-200">
-            <Swords size={28} className="text-stone-400 sm:w-8 sm:h-8" />
+          <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 3, ease: "linear" }} className="absolute inset-0 rounded-full border-t-2 border-emerald-500 dark:border-blue-500 opacity-20 transition-colors" />
+          <div className="h-20 w-20 sm:h-24 sm:w-24 bg-stone-100 dark:bg-[#151821] rounded-full flex items-center justify-center border border-stone-200 dark:border-slate-700 transition-colors">
+            <Swords size={28} className="text-stone-400 dark:text-slate-500 sm:w-8 sm:h-8" />
           </div>
         </div>
-        <h2 className="text-xl sm:text-2xl font-serif text-stone-800 mb-2">Entering the Arena</h2>
+        <h2 className="text-xl sm:text-2xl font-serif text-stone-800 dark:text-slate-200 mb-2 transition-colors">Entering the Arena</h2>
         <p className="font-light tracking-wide text-xs sm:text-sm animate-pulse">Searching for a worthy opponent...</p>
       </motion.div>
     );
@@ -128,13 +122,19 @@ export default function QuizArena() {
     const isWin = playerScore > ghostScore;
     const isTie = playerScore === ghostScore;
     return (
-      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center justify-center h-full max-w-md mx-auto text-center px-4">
-        <div className={`h-20 w-20 sm:h-24 sm:w-24 rounded-full flex items-center justify-center mb-6 border-4 ${isWin ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : isTie ? 'bg-stone-50 border-stone-200 text-stone-500' : 'bg-red-50 border-red-200 text-red-500'}`}>
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center justify-center h-full max-w-md mx-auto text-center px-4 transition-colors duration-500">
+        <div className={`h-20 w-20 sm:h-24 sm:w-24 rounded-full flex items-center justify-center mb-6 border-4 transition-colors ${
+          isWin 
+            ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400' 
+            : isTie 
+              ? 'bg-stone-50 dark:bg-slate-800 border-stone-200 dark:border-slate-700 text-stone-500 dark:text-slate-400' 
+              : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-500 dark:text-red-400'
+        }`}>
           {isWin ? <Sparkles size={32} className="sm:w-10 sm:h-10" /> : <XCircle size={32} className="sm:w-10 sm:h-10" />}
         </div>
-        <h2 className="text-3xl sm:text-4xl font-serif text-stone-900 mb-2">{isWin ? 'Victory!' : isTie ? 'Draw!' : 'Defeat'}</h2>
-        <p className="text-stone-500 mb-8 sm:mb-10 font-light text-sm sm:text-lg">You scored {playerScore} • Alex scored {ghostScore}</p>
-        <button onClick={() => window.location.reload()} className="bg-stone-900 text-white px-8 py-3.5 rounded-full hover:bg-black transition-colors font-medium text-sm sm:text-base shadow-md">
+        <h2 className="text-3xl sm:text-4xl font-serif text-stone-900 dark:text-slate-100 mb-2 transition-colors">{isWin ? 'Victory!' : isTie ? 'Draw!' : 'Defeat'}</h2>
+        <p className="text-stone-500 dark:text-slate-400 mb-8 sm:mb-10 font-light text-sm sm:text-lg transition-colors">You scored {playerScore} • Alex scored {ghostScore}</p>
+        <button onClick={() => window.location.reload()} className="bg-stone-900 dark:bg-blue-600 text-white px-8 py-3.5 rounded-full hover:bg-black dark:hover:bg-blue-700 transition-colors font-medium text-sm sm:text-base shadow-md">
           Play Again
         </button>
       </motion.div>
@@ -144,24 +144,24 @@ export default function QuizArena() {
   const currentQ = questions[currentIndex];
 
   return (
-    <div className="w-full max-w-4xl mx-auto flex flex-col h-full justify-between pt-2 pb-6 sm:py-4">
+    <div className="w-full max-w-4xl mx-auto flex flex-col h-full justify-between pt-2 pb-6 sm:py-4 transition-colors duration-500">
       
       {/* --- COMPACT MOBILE HEADER --- */}
-      <div className="flex justify-between items-center mb-6 sm:mb-10 border-b border-stone-100 pb-4 sm:pb-6 shrink-0">
+      <div className="flex justify-between items-center mb-6 sm:mb-10 border-b border-stone-100 dark:border-slate-700/50 pb-4 sm:pb-6 shrink-0 transition-colors">
         
         {/* Player Stats */}
         <div className="flex items-center space-x-3 sm:space-x-4">
-          <div className="h-10 w-10 sm:h-12 sm:w-12 bg-stone-900 text-white rounded-xl sm:rounded-2xl flex items-center justify-center shadow-sm">
+          <div className="h-10 w-10 sm:h-12 sm:w-12 bg-stone-900 dark:bg-[#151821] text-white dark:text-slate-200 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-sm transition-colors">
             <User size={18} className="sm:w-5 sm:h-5" />
           </div>
           <div>
-            <h3 className="font-medium text-stone-900 leading-tight text-sm sm:text-base">You</h3>
-            <span className="text-stone-400 text-[10px] sm:text-xs uppercase tracking-widest block mt-0.5">Score: {playerScore}</span>
+            <h3 className="font-medium text-stone-900 dark:text-slate-100 leading-tight text-sm sm:text-base transition-colors">You</h3>
+            <span className="text-stone-400 dark:text-slate-500 text-[10px] sm:text-xs uppercase tracking-widest block mt-0.5 transition-colors">Score: {playerScore}</span>
           </div>
         </div>
 
         {/* VS Badge */}
-        <div className="px-3 py-1 sm:px-4 sm:py-1.5 bg-rose-50 text-rose-600 rounded-full font-bold text-xs sm:text-sm border border-rose-100 flex items-center space-x-1 sm:space-x-2 shrink-0">
+        <div className="px-3 py-1 sm:px-4 sm:py-1.5 bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 rounded-full font-bold text-xs sm:text-sm border border-rose-100 dark:border-rose-800/30 flex items-center space-x-1 sm:space-x-2 shrink-0 transition-colors">
           <Zap size={12} className="sm:w-3.5 sm:h-3.5" /> 
           <span>VS</span>
         </div>
@@ -169,10 +169,10 @@ export default function QuizArena() {
         {/* AI Stats */}
         <div className="flex items-center space-x-3 sm:space-x-4 text-right">
           <div>
-            <h3 className="font-medium text-stone-900 leading-tight text-sm sm:text-base">Alex</h3>
-            <span className="text-stone-400 text-[10px] sm:text-xs uppercase tracking-widest block mt-0.5">Score: {ghostScore}</span>
+            <h3 className="font-medium text-stone-900 dark:text-slate-100 leading-tight text-sm sm:text-base transition-colors">Alex</h3>
+            <span className="text-stone-400 dark:text-slate-500 text-[10px] sm:text-xs uppercase tracking-widest block mt-0.5 transition-colors">Score: {ghostScore}</span>
           </div>
-          <div className="h-10 w-10 sm:h-12 sm:w-12 bg-stone-100 text-stone-500 border border-stone-200 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-sm">
+          <div className="h-10 w-10 sm:h-12 sm:w-12 bg-stone-100 dark:bg-[#151821] text-stone-500 dark:text-slate-400 border border-stone-200 dark:border-slate-700 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-sm transition-colors">
             <Bot size={18} className="sm:w-5 sm:h-5" />
           </div>
         </div>
@@ -180,18 +180,18 @@ export default function QuizArena() {
 
       {/* --- QUESTION & 2x2 GRID --- */}
       <div className="flex-1 flex flex-col justify-center min-h-0">
-        <h2 className="text-xl sm:text-3xl md:text-4xl font-serif text-stone-900 leading-snug mb-6 sm:mb-12 text-center max-w-3xl mx-auto shrink-0">
+        <h2 className="text-xl sm:text-3xl md:text-4xl font-serif text-stone-900 dark:text-slate-100 leading-snug mb-6 sm:mb-12 text-center max-w-3xl mx-auto shrink-0 transition-colors">
           {currentQ.questionText}
         </h2>
         
         {/* Forced 2x2 Grid Layout */}
         <div className="grid grid-cols-2 gap-3 sm:gap-4 shrink-0">
           {currentQ.options.map((opt, i) => {
-            let buttonStyle = "border-stone-200 text-stone-700 hover:border-stone-400 bg-white";
+            let buttonStyle = "border-stone-200 dark:border-slate-700 text-stone-700 dark:text-slate-300 hover:border-stone-400 dark:hover:border-slate-500 bg-white dark:bg-[#151821]";
             
             if (roundWinner !== null) {
-              if (opt === currentQ.correctAnswer) buttonStyle = "border-emerald-500 bg-emerald-50 text-emerald-800 shadow-sm";
-              else buttonStyle = "border-stone-100 text-stone-400 bg-stone-50 opacity-50";
+              if (opt === currentQ.correctAnswer) buttonStyle = "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-300 shadow-sm";
+              else buttonStyle = "border-stone-100 dark:border-slate-800 text-stone-400 dark:text-slate-600 bg-stone-50 dark:bg-[#1A1D27] opacity-60";
             }
 
             return (
@@ -217,7 +217,7 @@ export default function QuizArena() {
               animate={{ opacity: 1, scale: 1 }} 
               exit={{ opacity: 0 }}
               onClick={handleNextQuestion}
-              className="flex items-center space-x-1.5 sm:space-x-2 bg-emerald-600 text-white px-6 sm:px-8 py-3 sm:py-3.5 rounded-full hover:bg-emerald-700 transition-colors shadow-md"
+              className="flex items-center space-x-1.5 sm:space-x-2 bg-emerald-600 dark:bg-blue-600 text-white px-6 sm:px-8 py-3 sm:py-3.5 rounded-full hover:bg-emerald-700 dark:hover:bg-blue-700 transition-colors shadow-md"
             >
               <span className="font-medium text-xs sm:text-sm">
                 {currentIndex === questions.length - 1 ? 'Finish Match' : 'Next Question'}

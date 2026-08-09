@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   /* Our custom KapiKitab Earthy Palette */
   --color-kapi-dark: #0d3827;
