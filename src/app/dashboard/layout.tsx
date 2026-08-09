@@ -56,7 +56,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   
   const [activeSubject, setActiveSubject] = useState(() => allowedSubjects[0]);
 
-  // Sync Global Theme & Subject on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const savedSubject = localStorage.getItem('kapikitab-active-subject');
@@ -66,7 +65,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         setActiveSubject(allowedSubjects[0]);
       }
 
-      // Check if user set Dark Mode previously in the Profile Page
       const isDarkMode = localStorage.getItem('kapikitab-theme') === 'dark';
       if (isDarkMode) {
         document.documentElement.classList.add('dark');
@@ -102,9 +100,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   ];
 
   return (
-    <div className="h-screen w-full bg-[#FDFCF8] dark:bg-[#1C1F2B] overflow-hidden flex flex-col relative selection:bg-emerald-100 dark:selection:bg-blue-500/30 overscroll-none transition-colors duration-500">
+    <div className="fixed inset-0 h-[100dvh] w-full max-w-[100vw] bg-[#FDFCF8] dark:bg-[#1C1F2B] overflow-hidden flex flex-col selection:bg-emerald-100 dark:selection:bg-blue-500/30 overscroll-none transition-colors duration-500">
+      {/* 1. ROOT FIX: 'fixed inset-0', 'h-[100dvh]', and 'max-w-[100vw]' to lock bounds */}
       
-      <header className="absolute top-0 w-full z-50 pointer-events-none p-6 lg:p-10 flex justify-between items-start">
+      {/* 2. HEADER FIX: Pinned explicitly to the fixed root, z-index elevated */}
+      <header className="absolute top-0 left-0 w-full z-[100] pointer-events-none p-6 lg:p-10 flex justify-between items-start">
         
         <div className="pointer-events-auto relative flex flex-col items-center space-y-2">
           <Link href="/dashboard/profile">
@@ -132,12 +132,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </header>
 
       <DashboardContext.Provider value={{ currentClassId, activeSubject, setActiveSubject: handleSubjectChange }}>
-        <main className="flex-1 relative w-full h-full pt-20 pb-28 sm:pt-24 sm:pb-32 overflow-y-auto no-scrollbar overscroll-none">
+        {/* 3. MAIN WRAPPER FIX: strict 'overflow-x-hidden' stops sideways drift */}
+        <main className="flex-1 relative w-full h-full pt-20 pb-28 sm:pt-24 sm:pb-32 overflow-y-auto overflow-x-hidden no-scrollbar overscroll-none">
           {children}
         </main>
       </DashboardContext.Provider>
 
-      <nav className="fixed bottom-0 w-full z-50 pointer-events-none px-4 sm:px-6 pb-6 sm:pb-8 pt-20 bg-linear-to-t from-[#FDFCF8] dark:from-[#1C1F2B] via-[#FDFCF8]/80 dark:via-[#1C1F2B]/80 to-transparent transition-colors duration-500">
+      {/* 4. FOOTER FIX: Pinned explicitly to the fixed root */}
+      <nav className="absolute bottom-0 left-0 w-full z-[100] pointer-events-none px-4 sm:px-6 pb-6 sm:pb-8 pt-20 bg-linear-to-t from-[#FDFCF8] dark:from-[#1C1F2B] via-[#FDFCF8]/80 dark:via-[#1C1F2B]/80 to-transparent transition-colors duration-500">
         <div className="max-w-md mx-auto pointer-events-auto bg-white/70 dark:bg-[#282C3D]/80 backdrop-blur-2xl border border-white/60 dark:border-slate-700/50 shadow-[0_20px_50px_rgb(0,0,0,0.05)] rounded-[2.5rem] flex justify-between items-center px-4 py-3 relative transition-colors duration-500">
           {navItems.map((item) => {
             const Icon = item.icon;
