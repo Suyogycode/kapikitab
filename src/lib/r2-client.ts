@@ -7,4 +7,6 @@ export const r2 = new S3Client({
     accessKeyId: process.env.R2_ACCESS_KEY_ID as string,
     secretAccessKey: process.env.R2_SECRET_ACCESS_KEY as string,
   },
+  // CRITICAL: R2 requires this for presigned URLs to resolve correctly
+  forcePathStyle: true,
 });

@@ -136,14 +136,14 @@ const handleAssetSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
   const formData = new FormData(e.currentTarget);
   const file = formData.get('fileUpload') as File; 
   const youtubeUrl = formData.get('youtubeUrl') as string;
-  const componentRef = formData.get('componentRef') as string; // Extract Lab Component Pointer
+  const componentRef = formData.get('componentRef') as string;
 
   try {
     const title = (formData.get('assetTitle') || formData.get('labTitle')) as string;
-    let contentPayload: any = {};
     let uploadedUrl = '';
+    let stagingKey = '';
 
-    // 1. Process standard media uploads (Video, PDF, Diagrams)
+    // 1. Process media uploads (Video, PDF, Diagrams)
     if (file && file.size > 0) {
       const uploadType = panel.type === 'video' ? 'video' : 'image';
       const uploadFormData = new FormData();
@@ -151,17 +151,21 @@ const handleAssetSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
       uploadFormData.append("type", uploadType);
 
       const response = await fetch('/api/upload', { method: 'POST', body: uploadFormData });
-      if (!response.ok) throw new Error('Failed to authorize or execute upload.');
+      if (!response.ok) throw new Error('Failed to authorize upload.');
 
       const data = await response.json();
+
       if (data.isPresigned) {
+        // Stream directly to Cloudflare R2 via presigned PUT
         const uploadRes = await fetch(data.uploadUrl, {
           method: 'PUT',
           body: file,
-          headers: { 'Content-Type': file.type },
+          headers: { 'Content-Type': file.type || 'video/mp4' },
         });
-        if (!uploadRes.ok) throw new Error("Direct-to-R2 streaming failed.");
+        if (!uploadRes.ok) throw new Error("Direct-to-R2 upload failed.");
+        
         uploadedUrl = data.url;
+        stagingKey = data.stagingKey || '';
       } else {
         uploadedUrl = data.url;
       }
@@ -173,7 +177,7 @@ const handleAssetSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
       return;
     }
 
-// 2. Map Panel Types to MongoDB Schema Enums
+    // 2. Map Panel Types to MongoDB Schema
     const typeMapping: Record<string, string> = {
       'video': 'video_lecture',
       'pdf': 'pdf_document',
@@ -184,17 +188,20 @@ const handleAssetSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     const schemaCompliantType = panel.type ? typeMapping[panel.type] : 'diagram';
     const semanticAssetId = `ast-${chapterId}-${panel.unitId}-${Date.now()}`;
 
-    // 3. Format Content payload dynamically based on type
+    // 3. Format Content payload
     let finalContent: any = uploadedUrl;
     
     if (schemaCompliantType === 'video_lecture') {
-      finalContent = { videoUrl: uploadedUrl };
+      finalContent = { 
+        videoUrl: uploadedUrl,
+        stagingKey: stagingKey,
+        status: stagingKey ? 'processing' : 'ready' 
+      };
     } else if (schemaCompliantType === 'react_simulation') {
-      // THE FIX: Store the string directly to prevent Mongoose "[object Object]" corruption
       finalContent = componentRef.trim(); 
     }
 
-    contentPayload = {
+    const contentPayload = {
       assetId: semanticAssetId,
       chapterId: chapterId,
       unitId: panel.unitId,

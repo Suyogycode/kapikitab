@@ -11,6 +11,8 @@ import Link from 'next/link';
 
 import ReactPuzzleRenderer from '@/components/interactives/2d-simulations/ReactPuzzleRenderer';
 import AudioOverviewPlayer from '@/app/learning/AudioOverviewPlayer';
+import HlsVideoPlayer from '@/components/player/HlsVideoPlayer';
+
 
 export default function DynamicLearningWorkspace() {
   const params = useParams();
@@ -25,13 +27,13 @@ export default function DynamicLearningWorkspace() {
   const [answeredQuestions, setAnsweredQuestions] = useState<Record<string, string>>({});
   const [activeQuestionIndexes, setActiveQuestionIndexes] = useState<Record<string, number>>({});
 
-  useEffect(() => {
+useEffect(() => {
     const fetchAllData = async () => {
       try {
         const [chapRes, assetRes, questRes] = await Promise.all([
-          fetch(`/api/content/chapter?id=${slug}`),
-          fetch(`/api/content/asset?chapterId=${slug}`),
-          fetch(`/api/content/question?chapterId=${slug}`)
+          fetch(`/api/content/chapter?id=${slug}`, { cache: 'no-store' }),
+          fetch(`/api/content/asset?chapterId=${slug}`, { cache: 'no-store' }),
+          fetch(`/api/content/question?chapterId=${slug}`, { cache: 'no-store' })
         ]);
 
         if (chapRes.ok) {
@@ -188,15 +190,26 @@ export default function DynamicLearningWorkspace() {
 
               <div className="space-y-12">
                 
-                {/* 1. VIDEO LAYER */}
+              {/* 1. VIDEO LAYER */}
                 {videoAsset && (
-                  <div className="w-full aspect-video bg-black dark:bg-[#0F1117] rounded-2xl overflow-hidden shadow-xl border border-stone-200 dark:border-slate-800 transition-colors">
-                    {videoAsset.content?.videoUrl ? (
-                      <iframe src={videoAsset.content.videoUrl} className="w-full h-full border-0" allowFullScreen />
+                  <div className="w-full my-6">
+                    {videoAsset.content?.status === 'processing' ? (
+                      <div className="w-full aspect-video rounded-2xl bg-stone-900 dark:bg-[#0F1117] border border-stone-200 dark:border-slate-800 flex flex-col items-center justify-center p-6 text-center">
+                        <Loader2 className="w-10 h-10 animate-spin text-emerald-500 mb-3" />
+                        <h4 className="text-sm font-semibold text-stone-200 mb-1">Transcoding Video Stream</h4>
+                        <p className="text-xs text-stone-400 max-w-xs font-mono">
+                          Your Apple Silicon M4 worker is currently generating multi-bitrate HLS segments. This page will update shortly.
+                        </p>
+                      </div>
+                    ) : videoAsset.content?.videoUrl ? (
+                      <HlsVideoPlayer 
+                        src={videoAsset.content.videoUrl} 
+                        title={videoAsset.title} 
+                      />
                     ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center text-white/50 bg-stone-900 dark:bg-[#0F1117]">
-                        <PlayCircle size={48} className="mb-4 opacity-50" />
-                        <p>Video processing...</p>
+                      <div className="w-full aspect-video rounded-2xl bg-stone-900 dark:bg-[#0F1117] flex flex-col items-center justify-center text-stone-400">
+                        <PlayCircle size={48} className="mb-2 opacity-50" />
+                        <p className="text-xs font-mono">No video URL available</p>
                       </div>
                     )}
                   </div>

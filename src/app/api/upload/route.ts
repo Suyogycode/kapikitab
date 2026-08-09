@@ -7,103 +7,68 @@ export async function POST(req: Request) {
   try {
     const formData = await req.formData();
     const file = formData.get("file") as File;
-    const type = formData.get("type") as string; // 'video' or 'image'
+    const type = formData.get("type") as string; // 'video', 'image', or 'pdf'
 
     if (!file) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
+    const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+    const timeStamp = Date.now();
+
     // ==========================================
-    // ROUTE 1: VIDEOS GO TO BUNNY STREAM
+    // ROUTE 1: RAW MP4 VIDEOS GO TO R2 STAGING
     // ==========================================
     if (type === 'video') {
-      const libraryId = process.env.BUNNY_STREAM_LIBRARY_ID;
-      const apiKey = process.env.BUNNY_STREAM_API_KEY;
-      const cdnHostname = process.env.BUNNY_CDN_HOSTNAME || 'iframe.mediadelivery.net';
-
-      if (!libraryId || !apiKey) {
-        return NextResponse.json({ error: "Bunny Stream credentials not configured in environment" }, { status: 500 });
-      }
-
-      // 1. Create a video object in Bunny Stream
-      const createVideoRes = await fetch(`https://video.bunnycdn.com/library/${libraryId}/videos`, {
-        method: 'POST',
-        headers: {
-          'AccessKey': apiKey,
-          'Content-Type': 'application/json',
-          'accept': 'application/json'
-        },
-        body: JSON.stringify({ title: file.name })
-      });
-
-      if (!createVideoRes.ok) {
-        const errText = await createVideoRes.text();
-        console.error("Bunny Create Video Error:", errText);
-        return NextResponse.json({ error: "Failed to initialize video slot in Bunny Stream" }, { status: 500 });
-      }
-
-      const videoData = await createVideoRes.json();
-      const videoId = videoData.guid;
-
-      // 2. Stream raw binary file to Bunny Stream slot
-      const fileBuffer = Buffer.from(await file.arrayBuffer());
-      const uploadBinaryRes = await fetch(`https://video.bunnycdn.com/library/${libraryId}/videos/${videoId}`, {
-        method: 'PUT',
-        headers: {
-          'AccessKey': apiKey,
-          'Content-Type': 'application/octet-stream'
-        },
-        body: fileBuffer
-      });
-
-      if (!uploadBinaryRes.ok) {
-        const errText = await uploadBinaryRes.text();
-        console.error("Bunny Upload Binary Error:", errText);
-        return NextResponse.json({ error: "Failed to stream video binary to Bunny" }, { status: 500 });
-      }
-
-      // FIX: Generate the correct URLs based on Bunny's architecture
-      
-      // 1. Direct Play URL (For standard iframe embeds)
-      const playUrl = `https://player.mediadelivery.net/play/${libraryId}/${videoId}`;
-      
-      // 2. HLS Playlist URL (For custom players like Video.js or React Player)
-      const hlsUrl = `https://${cdnHostname}/${videoId}/playlist.m3u8`;
-
-      return NextResponse.json({ 
-        url: playUrl,     // Defaulting to the iframe player URL
-        hlsUrl: hlsUrl,   // Passing HLS back just in case your frontend needs it
-        videoId: videoId,
-        message: "Video successfully uploaded to Bunny Stream" 
-      });
-    }
-
-    // ==========================================
-    // ROUTE 2: IMAGES & PDFS GO TO CLOUDFLARE R2
-    // ==========================================
-    if (type === 'image' || type === 'pdf') {
-      const fileName = `${Date.now()}-${file.name.replace(/\s+/g, '-')}`;
+      const stagingKey = `raw-staging/${timeStamp}-${sanitizedName}`;
 
       const command = new PutObjectCommand({
-        Bucket: process.env.R2_BUCKET_NAME,
-        Key: fileName,
-        ContentType: file.type,
+        Bucket: process.env.R2_BUCKET_NAME!,
+        Key: stagingKey,
+        ContentType: file.type || 'video/mp4',
       });
 
-      const signedUrl = await getSignedUrl(r2, command, { expiresIn: 60 });
-      const publicUrl = `${process.env.R2_PUBLIC_DOMAIN}/${fileName}`;
+      // 5-minute expiry for raw video upload
+      const signedUrl = await getSignedUrl(r2, command, { expiresIn: 300 });
+      const publicUrl = `${process.env.R2_PUBLIC_DOMAIN}/${stagingKey}`;
 
       return NextResponse.json({
         isPresigned: true,
         uploadUrl: signedUrl,
-        url: publicUrl
+        stagingKey: stagingKey,
+        url: publicUrl,
+        message: "Presigned upload URL generated for raw video staging."
+      });
+    }
+
+    // ==========================================
+    // ROUTE 2: IMAGES & PDFS GO TO R2 PUBLIC FOLDER
+    // ==========================================
+    if (type === 'image' || type === 'pdf') {
+      const folder = type === 'image' ? 'images' : 'pdfs';
+      const fileKey = `${folder}/${timeStamp}-${sanitizedName}`;
+
+      const command = new PutObjectCommand({
+        Bucket: process.env.R2_BUCKET_NAME!,
+        Key: fileKey,
+        ContentType: file.type,
+      });
+
+      const signedUrl = await getSignedUrl(r2, command, { expiresIn: 120 });
+      const publicUrl = `${process.env.R2_PUBLIC_DOMAIN}/${fileKey}`;
+
+      return NextResponse.json({
+        isPresigned: true,
+        uploadUrl: signedUrl,
+        url: publicUrl,
+        key: fileKey
       });
     }
 
     return NextResponse.json({ error: "Unknown file type request" }, { status: 400 });
 
   } catch (error) {
-    console.error("Upload error:", error);
-    return NextResponse.json({ error: "Failed to process media resource" }, { status: 500 });
+    console.error("Upload route error:", error);
+    return NextResponse.json({ error: "Failed to generate presigned upload URL" }, { status: 500 });
   }
 }
