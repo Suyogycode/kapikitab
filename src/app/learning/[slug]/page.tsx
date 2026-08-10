@@ -13,7 +13,6 @@ import ReactPuzzleRenderer from '@/components/interactives/2d-simulations/ReactP
 import AudioOverviewPlayer from '@/app/learning/AudioOverviewPlayer';
 import HlsVideoPlayer from '@/components/player/HlsVideoPlayer';
 
-
 export default function DynamicLearningWorkspace() {
   const params = useParams();
   const slug = params.slug as string;
@@ -27,7 +26,7 @@ export default function DynamicLearningWorkspace() {
   const [answeredQuestions, setAnsweredQuestions] = useState<Record<string, string>>({});
   const [activeQuestionIndexes, setActiveQuestionIndexes] = useState<Record<string, number>>({});
 
-useEffect(() => {
+  useEffect(() => {
     const fetchAllData = async () => {
       try {
         const [chapRes, assetRes, questRes] = await Promise.all([
@@ -145,13 +144,15 @@ useEffect(() => {
         </div>
       </div>
 
-      {/* AUDIO OVERVIEW PLAYER */}
-      <div className="w-full px-4 sm:px-6 mb-16">
-        <AudioOverviewPlayer 
-          chapterId={chapter.chapterId} 
-          chapterTitle={chapter.title} 
-        />
-      </div>
+      {/* AUDIO OVERVIEW PLAYER - ONLY SHOWS IF SUMMARY EXISTS */}
+      {chapter.summary && chapter.summary.trim().length > 0 && (
+        <div className="w-full px-4 sm:px-6 mb-16">
+          <AudioOverviewPlayer 
+            chapterId={chapter.chapterId} 
+            chapterTitle={chapter.title} 
+          />
+        </div>
+      )}
 
       <div className="max-w-4xl mx-auto w-full px-4 sm:px-6 pb-32 space-y-24">
         {chapter.units?.map((unit: any) => {
@@ -159,9 +160,11 @@ useEffect(() => {
           const unitAssets = assets.filter(a => a.unitId === unit.unitId);
           const unitQuestions = questions.filter(q => q.unitId === unit.unitId);
           
-          const videoAsset = unitAssets.find(a => a.type === 'video_lecture');
-          const labAsset = unitAssets.find(a => a.type === 'react_simulation');
-          const documentAssets = unitAssets.filter(a => ['pdf_document', 'diagram'].includes(a.type));
+          // Categorize assets into specific typed arrays
+          const videoAssets = unitAssets.filter(a => a.type === 'video_lecture');
+          const labAssets = unitAssets.filter(a => a.type === 'react_simulation');
+          const diagramAssets = unitAssets.filter(a => a.type === 'diagram');
+          const pdfAssets = unitAssets.filter(a => a.type === 'pdf_document');
 
           const qIndex = activeQuestionIndexes[unit.unitId] || 0;
           const currentQuestion = unitQuestions[qIndex];
@@ -173,10 +176,6 @@ useEffect(() => {
               ? answeredValue === currentQuestion.correctAnswers?.[0] 
               : currentQuestion.correctAnswers?.includes(answeredValue)
           );
-
-          const labComponentRef = labAsset 
-            ? (typeof labAsset.content === 'object' ? labAsset.content?.componentRef : labAsset.content)
-            : null;
 
           return (
             <div key={unit.unitId} id={`unit-${unit.unitId}`} className="scroll-mt-32">
@@ -190,60 +189,79 @@ useEffect(() => {
 
               <div className="space-y-12">
                 
-              {/* 1. VIDEO LAYER */}
-                {videoAsset && (
+                {/* 1. VIDEO LECTURES (HORIZONTAL SCROLL IF MULTIPLE) */}
+                {videoAssets.length > 0 && (
                   <div className="w-full my-6">
-                    {videoAsset.content?.status === 'processing' ? (
-                      <div className="w-full aspect-video rounded-2xl bg-stone-900 dark:bg-[#0F1117] border border-stone-200 dark:border-slate-800 flex flex-col items-center justify-center p-6 text-center">
-                        <Loader2 className="w-10 h-10 animate-spin text-emerald-500 mb-3" />
-                        <h4 className="text-sm font-semibold text-stone-200 mb-1">Transcoding Video Stream</h4>
-                        <p className="text-xs text-stone-400 max-w-xs font-mono">
-                          Your Apple Silicon M4 worker is currently generating multi-bitrate HLS segments. This page will update shortly.
-                        </p>
-                      </div>
-                    ) : videoAsset.content?.videoUrl ? (
-                      <HlsVideoPlayer 
-                        src={videoAsset.content.videoUrl} 
-                        title={videoAsset.title} 
-                      />
-                    ) : (
-                      <div className="w-full aspect-video rounded-2xl bg-stone-900 dark:bg-[#0F1117] flex flex-col items-center justify-center text-stone-400">
-                        <PlayCircle size={48} className="mb-2 opacity-50" />
-                        <p className="text-xs font-mono">No video URL available</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* 2. DYNAMIC 2D PUZZLE RENDERER */}
-                {labAsset && (
-                  <div className="w-full my-8">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Beaker size={20} className="text-amber-500 dark:text-blue-400 transition-colors" />
-                      <h3 className="text-xl font-serif text-stone-900 dark:text-slate-100 transition-colors">{labAsset.title}</h3>
+                    <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory no-scrollbar">
+                      {videoAssets.map((video, idx) => (
+                        <div 
+                          key={idx} 
+                          className={`${videoAssets.length > 1 ? 'w-[85vw] sm:w-[680px] shrink-0 snap-center' : 'w-full'}`}
+                        >
+                          {video.content?.status === 'processing' ? (
+                            <div className="w-full aspect-video rounded-2xl bg-stone-900 dark:bg-[#0F1117] border border-stone-200 dark:border-slate-800 flex flex-col items-center justify-center p-6 text-center">
+                              <Loader2 className="w-10 h-10 animate-spin text-emerald-500 mb-3" />
+                              <h4 className="text-sm font-semibold text-stone-200 mb-1">Transcoding Video Stream</h4>
+                              <p className="text-xs text-stone-400 max-w-xs font-mono">
+                                Your Apple Silicon M4 worker is currently generating multi-bitrate HLS segments.
+                              </p>
+                            </div>
+                          ) : video.content?.videoUrl ? (
+                            <HlsVideoPlayer 
+                              src={video.content.videoUrl} 
+                              title={video.title} 
+                            />
+                          ) : (
+                            <div className="w-full aspect-video rounded-2xl bg-stone-900 dark:bg-[#0F1117] flex flex-col items-center justify-center text-stone-400">
+                              <PlayCircle size={48} className="mb-2 opacity-50" />
+                              <p className="text-xs font-mono">No video URL available</p>
+                            </div>
+                          )}
+                        </div>
+                      ))}
                     </div>
-                    {labComponentRef ? (
-                      <ReactPuzzleRenderer componentRef={labComponentRef} />
-                    ) : (
-                      <div className="p-6 bg-amber-50 dark:bg-blue-900/10 border border-amber-200 dark:border-blue-800/30 rounded-2xl text-amber-800 dark:text-blue-300 text-sm transition-colors">
-                        No <code>componentRef</code> pointer found for this lab asset.
-                      </div>
-                    )}
                   </div>
                 )}
 
-                {/* 3. DIAGRAMS & PDF DOCUMENTS */}
-                {documentAssets.length > 0 && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {documentAssets.map((doc, idx) => {
-                      const assetUrl = typeof doc.content === 'string' 
-                        ? doc.content 
-                        : doc.content?.url || doc.content?.imageUrl || doc.content?.fileUrl;
+                {/* 2. DYNAMIC 2D/3D PUZZLE RENDERER / INTERACTIVE LABS */}
+                {labAssets.length > 0 && (
+                  <div className="w-full my-8 space-y-6">
+                    {labAssets.map((lab, idx) => {
+                      const labComponentRef = typeof lab.content === 'object' ? lab.content?.componentRef : lab.content;
+                      return (
+                        <div key={idx}>
+                          <div className="flex items-center gap-2 mb-4">
+                            <Beaker size={20} className="text-amber-500 dark:text-blue-400 transition-colors" />
+                            <h3 className="text-xl font-serif text-stone-900 dark:text-slate-100 transition-colors">{lab.title}</h3>
+                          </div>
+                          {labComponentRef ? (
+                            <ReactPuzzleRenderer componentRef={labComponentRef} />
+                          ) : (
+                            <div className="p-6 bg-amber-50 dark:bg-blue-900/10 border border-amber-200 dark:border-blue-800/30 rounded-2xl text-amber-800 dark:text-blue-300 text-sm transition-colors">
+                              No <code>componentRef</code> pointer found for this lab asset.
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
 
-                      if (doc.type === 'diagram') {
+                {/* 3. VISUAL DIAGRAMS & IMAGES (HORIZONTAL SCROLL IF MULTIPLE) */}
+                {diagramAssets.length > 0 && (
+                  <div className="w-full my-6">
+                    <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory no-scrollbar">
+                      {diagramAssets.map((doc, idx) => {
+                        const assetUrl = typeof doc.content === 'string' 
+                          ? doc.content 
+                          : doc.content?.url || doc.content?.imageUrl || doc.content?.fileUrl;
+
                         return (
-                          <div key={idx} className="bg-white dark:bg-[#282C3D] rounded-2xl shadow-sm border border-stone-200 dark:border-slate-700/80 overflow-hidden flex flex-col group transition-colors">
-                            <div className="w-full h-48 bg-stone-100 dark:bg-[#151821] relative overflow-hidden transition-colors">
+                          <div 
+                            key={idx} 
+                            className={`${diagramAssets.length > 1 ? 'w-[75vw] sm:w-[380px] shrink-0 snap-center' : 'w-full'} bg-white dark:bg-[#282C3D] rounded-2xl shadow-sm border border-stone-200 dark:border-slate-700/80 overflow-hidden flex flex-col group transition-colors`}
+                          >
+                            <div className="w-full h-52 bg-stone-100 dark:bg-[#151821] relative overflow-hidden transition-colors">
                               <img 
                                 src={assetUrl} 
                                 alt={doc.title} 
@@ -261,26 +279,12 @@ useEffect(() => {
                             </div>
                           </div>
                         );
-                      }
-
-                      return (
-                        <a key={idx} href={assetUrl} target="_blank" rel="noopener noreferrer" className="block">
-                          <div className="bg-white dark:bg-[#282C3D] p-6 rounded-2xl shadow-sm border border-stone-200 dark:border-slate-700/80 hover:shadow-md hover:border-blue-200 dark:hover:border-blue-500 transition-all group flex items-center space-x-4 h-full">
-                            <div className="h-12 w-12 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-105 transition-all">
-                              <FileText size={24} />
-                            </div>
-                            <div>
-                              <h4 className="font-medium text-stone-900 dark:text-slate-200 transition-colors">{doc.title}</h4>
-                              <span className="text-xs text-stone-400 dark:text-slate-500 uppercase tracking-widest font-bold transition-colors">PDF Guide</span>
-                            </div>
-                          </div>
-                        </a>
-                      );
-                    })}
+                      })}
+                    </div>
                   </div>
                 )}
 
-                {/* 4. PRACTICE QUESTION BANK */}
+                {/* 4. PRACTICE QUESTION BANK (KNOWLEDGE CHECK) */}
                 {unitQuestions.length > 0 && currentQuestion && (
                   <div className="bg-white dark:bg-[#282C3D] border border-stone-200 dark:border-slate-700/80 rounded-3xl p-6 sm:p-10 shadow-sm relative overflow-hidden transition-colors">
                     
@@ -414,6 +418,39 @@ useEffect(() => {
                       </div>
                     </div>
 
+                  </div>
+                )}
+
+                {/* 5. REFERENCE PDF DOCUMENTS & NOTES (ALWAYS AT THE BOTTOM OF THE UNIT) */}
+                {pdfAssets.length > 0 && (
+                  <div className="w-full my-6 pt-4 border-t border-stone-100 dark:border-slate-800/60">
+                    <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory no-scrollbar">
+                      {pdfAssets.map((doc, idx) => {
+                        const assetUrl = typeof doc.content === 'string' 
+                          ? doc.content 
+                          : doc.content?.url || doc.content?.fileUrl;
+
+                        return (
+                          <a 
+                            key={idx} 
+                            href={assetUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className={`block ${pdfAssets.length > 1 ? 'w-[75vw] sm:w-[320px] shrink-0 snap-center' : 'w-full'}`}
+                          >
+                            <div className="bg-white dark:bg-[#282C3D] p-6 rounded-2xl shadow-sm border border-stone-200 dark:border-slate-700/80 hover:shadow-md hover:border-blue-200 dark:hover:border-blue-500 transition-all group flex items-center space-x-4 h-full">
+                              <div className="h-12 w-12 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-105 transition-all">
+                                <FileText size={24} />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <h4 className="font-medium text-stone-900 dark:text-slate-200 transition-colors truncate">{doc.title}</h4>
+                                <span className="text-xs text-stone-400 dark:text-slate-500 uppercase tracking-widest font-bold transition-colors">PDF Reference</span>
+                              </div>
+                            </div>
+                          </a>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
 

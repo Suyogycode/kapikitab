@@ -5,6 +5,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Send, User, Paperclip, X } from 'lucide-react';
 import Image from 'next/image';
 
+import ReactMarkdown from 'react-markdown';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css'; // Essential for math symbols to render correctly
+
 type Message = {
   id: number;
   sender: 'ai' | 'user';
@@ -82,7 +87,7 @@ export default function AiPage() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const handleSend = async (e: React.FormEvent) => {
+const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputValue.trim() && !selectedImage) return;
 
@@ -92,6 +97,9 @@ export default function AiPage() {
       text: inputValue,
       image: selectedImage || undefined 
     };
+    
+    // 1. Capture existing messages, but EXCLUDE Kapi's initial greeting
+    const currentMessages = messages.filter(msg => msg.id !== 1);
     
     setMessages(prev => [...prev, newUserMsg]);
     const currentInput = inputValue;
@@ -104,6 +112,12 @@ export default function AiPage() {
     setIsTyping(true);
 
     try {
+      // 2. Map the frontend messages into the exact format our stateless API expects
+      const formattedClientHistory = currentMessages.map(msg => ({
+        role: msg.sender,
+        content: msg.text
+      }));
+
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -111,7 +125,8 @@ export default function AiPage() {
           text: currentInput,
           imageBase64: currentImage,
           mimeType: currentMimeType,
-          threadId: "global"
+          threadId: "global",
+          clientHistory: formattedClientHistory // 3. Send the history array
         }),
       });
 
@@ -169,9 +184,14 @@ export default function AiPage() {
                       </div>
                     )}
                     
-                    <p className="text-[15px] sm:text-base text-stone-600 dark:text-slate-300 leading-relaxed sm:leading-[1.8] font-light whitespace-pre-wrap tracking-wide transition-colors">
-                      {msg.text}
-                    </p>
+                    <div className="text-[15px] sm:text-base text-stone-600 dark:text-slate-300 leading-relaxed sm:leading-[1.8] font-light tracking-wide transition-colors [&>p]:mb-4 [&>p:last-child]:mb-0 [&_strong]:font-semibold [&_em]:italic overflow-x-auto">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkMath]}
+                        rehypePlugins={[rehypeKatex]}
+                      >
+                        {msg.text}
+                      </ReactMarkdown>
+                    </div>
                   </div>
                 </motion.div>
               );

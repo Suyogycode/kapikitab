@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, Plus, Save, Loader2, FileVideo, 
   FileText, ChevronDown, Image as ImageIcon, 
-  Beaker, X, UploadCloud, Sparkles, Database
+  Beaker, X, UploadCloud, Sparkles, Database, Trash2
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -19,7 +19,6 @@ type Chapter = { chapterId: string; classId: string; subjectId: string; chapterN
 type AssetCountSummary = { video_lecture: number; pdf_document: number; diagram: number; react_simulation: number; questionsCount: number; };
 type UnitInventory = Record<string, AssetCountSummary>;
 
-// Notice how clean the PanelType is now!
 type PanelType = 'video' | 'pdf' | 'diagram' | 'lab' | 'questions' | null;
 
 export default function SimplifiedChapterWorkspace() {
@@ -28,6 +27,8 @@ export default function SimplifiedChapterWorkspace() {
 
   const [chapter, setChapter] = useState<Chapter | null>(null);
   const [inventory, setInventory] = useState<UnitInventory>({});
+  const [assets, setAssets] = useState<any[]>([]); // NEW: Store fetched assets
+  
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [expandedUnit, setExpandedUnit] = useState<string | null>(null);
@@ -36,21 +37,31 @@ export default function SimplifiedChapterWorkspace() {
     isOpen: false, type: null, unitId: null
   });
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   const fetchDataSummary = async () => {
     try {
-      const res = await fetch(`/api/content/chapter?id=${chapterId}`);
-      const data = await res.json();
-      if (res.ok) {
+      const [chapRes, summaryRes, assetsRes] = await Promise.all([
+        fetch(`/api/content/chapter?id=${chapterId}`),
+        fetch(`/api/content/chapter/summary?chapterId=${chapterId}`),
+        fetch(`/api/content/asset?chapterId=${chapterId}`) // NEW: Fetch all assets for this chapter
+      ]);
+
+      if (chapRes.ok) {
+        const data = await chapRes.json();
         data.units.sort((a: Unit, b: Unit) => a.order - b.order);
         setChapter(data);
         if (data.units.length > 0 && !expandedUnit) setExpandedUnit(data.units[0].unitId);
+      }
 
-        const summaryRes = await fetch(`/api/content/chapter/summary?chapterId=${chapterId}`);
-        if (summaryRes.ok) {
-          const summaryData = await summaryRes.json();
-          setInventory(summaryData.unitInventory || {});
-        }
+      if (summaryRes.ok) {
+        const summaryData = await summaryRes.json();
+        setInventory(summaryData.unitInventory || {});
+      }
+
+      if (assetsRes.ok) {
+        const assetsData = await assetsRes.json();
+        setAssets(assetsData);
       }
     } catch (err) {
       console.error("Failed to compile workspace dashboard assets", err);
@@ -100,136 +111,141 @@ export default function SimplifiedChapterWorkspace() {
     }
   };
 
-    const handleSaveSummary = async () => {
-      if (!chapter) return;
-      setIsSavingSummary(true);
-      try {
-        await fetch('/api/content/chapter', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(chapter),
-        });
-        await fetchDataSummary();
-      } catch (err) {
-        console.error("Failed to save chapter context summary:", err);
-      } finally {
-        setIsSavingSummary(false);
-      }
-    };
-
-        const getYouTubeEmbedUrl = (url: string) => {
-      // Regex to extract the 11-character YouTube Video ID from any standard link format
-      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-      const match = url.match(regExp);
-      
-      return (match && match[2].length === 11) 
-        ? `https://www.youtube.com/embed/${match[2]}` 
-        : url; // Fallback to original if parsing fails
-    };
-
-// Inside src/app/admin/chapter/[chapterId]/page.tsx (SimplifiedChapterWorkspace)
-
-const handleAssetSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-  e.preventDefault();
-  setIsProcessing(true);
-  
-  const formData = new FormData(e.currentTarget);
-  const file = formData.get('fileUpload') as File; 
-  const youtubeUrl = formData.get('youtubeUrl') as string;
-  const componentRef = formData.get('componentRef') as string;
-
-  try {
-    const title = (formData.get('assetTitle') || formData.get('labTitle')) as string;
-    let uploadedUrl = '';
-    let stagingKey = '';
-
-    // 1. Process media uploads (Video, PDF, Diagrams)
-    if (file && file.size > 0) {
-      const uploadType = panel.type === 'video' ? 'video' : 'image';
-      const uploadFormData = new FormData();
-      uploadFormData.append("file", file);
-      uploadFormData.append("type", uploadType);
-
-      const response = await fetch('/api/upload', { method: 'POST', body: uploadFormData });
-      if (!response.ok) throw new Error('Failed to authorize upload.');
-
-      const data = await response.json();
-
-      if (data.isPresigned) {
-        // Stream directly to Cloudflare R2 via presigned PUT
-        const uploadRes = await fetch(data.uploadUrl, {
-          method: 'PUT',
-          body: file,
-          headers: { 'Content-Type': file.type || 'video/mp4' },
-        });
-        if (!uploadRes.ok) throw new Error("Direct-to-R2 upload failed.");
-        
-        uploadedUrl = data.url;
-        stagingKey = data.stagingKey || '';
-      } else {
-        uploadedUrl = data.url;
-      }
-    } else if (youtubeUrl && youtubeUrl.trim() !== '') {
-      uploadedUrl = getYouTubeEmbedUrl(youtubeUrl.trim());
-    } else if (panel.type !== 'lab') {
-      alert("Please upload a file or provide a YouTube URL.");
-      setIsProcessing(false);
-      return;
+  const handleSaveSummary = async () => {
+    if (!chapter) return;
+    setIsSavingSummary(true);
+    try {
+      await fetch('/api/content/chapter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(chapter),
+      });
+      await fetchDataSummary();
+    } catch (err) {
+      console.error("Failed to save chapter context summary:", err);
+    } finally {
+      setIsSavingSummary(false);
     }
+  };
 
-    // 2. Map Panel Types to MongoDB Schema
-    const typeMapping: Record<string, string> = {
-      'video': 'video_lecture',
-      'pdf': 'pdf_document',
-      'diagram': 'diagram',
-      'lab': 'react_simulation'
-    };
-    
-    const schemaCompliantType = panel.type ? typeMapping[panel.type] : 'diagram';
-    const semanticAssetId = `ast-${chapterId}-${panel.unitId}-${Date.now()}`;
+  // NEW: Delete Asset Logic
+  const handleDeleteAsset = async (assetId: string) => {
+    if (!confirm("Are you sure you want to permanently delete this asset?")) return;
+    setIsDeleting(assetId);
+    try {
+      const res = await fetch(`/api/content/asset?id=${assetId}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error("Failed to delete asset from database.");
+      await fetchDataSummary();
+    } catch (error) {
+      console.error(error);
+      alert("Failed to delete the asset.");
+    } finally {
+      setIsDeleting(null);
+    }
+  };
 
-    // 3. Format Content payload
-    let finalContent: any = uploadedUrl;
+  const getYouTubeEmbedUrl = (url: string) => {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? `https://www.youtube.com/embed/${match[2]}` : url; 
+  };
+
+  const handleAssetSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsProcessing(true);
     
-    if (schemaCompliantType === 'video_lecture') {
-      finalContent = { 
-        videoUrl: uploadedUrl,
-        stagingKey: stagingKey,
-        status: stagingKey ? 'processing' : 'ready' 
+    const formData = new FormData(e.currentTarget);
+    const file = formData.get('fileUpload') as File; 
+    const youtubeUrl = formData.get('youtubeUrl') as string;
+    const componentRef = formData.get('componentRef') as string;
+
+    try {
+      const title = (formData.get('assetTitle') || formData.get('labTitle')) as string;
+      let uploadedUrl = '';
+      let stagingKey = '';
+
+      if (file && file.size > 0) {
+        const uploadType = panel.type === 'video' ? 'video' : 'image';
+        const uploadFormData = new FormData();
+        uploadFormData.append("file", file);
+        uploadFormData.append("type", uploadType);
+
+        const response = await fetch('/api/upload', { method: 'POST', body: uploadFormData });
+        if (!response.ok) throw new Error('Failed to authorize upload.');
+
+        const data = await response.json();
+
+        if (data.isPresigned) {
+          const uploadRes = await fetch(data.uploadUrl, {
+            method: 'PUT',
+            body: file,
+            headers: { 'Content-Type': file.type || 'video/mp4' },
+          });
+          if (!uploadRes.ok) throw new Error("Direct-to-R2 upload failed.");
+          
+          uploadedUrl = data.url;
+          stagingKey = data.stagingKey || '';
+        } else {
+          uploadedUrl = data.url;
+        }
+      } else if (youtubeUrl && youtubeUrl.trim() !== '') {
+        uploadedUrl = getYouTubeEmbedUrl(youtubeUrl.trim());
+      } else if (panel.type !== 'lab') {
+        alert("Please upload a file or provide a YouTube URL.");
+        setIsProcessing(false);
+        return;
+      }
+
+      const typeMapping: Record<string, string> = {
+        'video': 'video_lecture',
+        'pdf': 'pdf_document',
+        'diagram': 'diagram',
+        'lab': 'react_simulation'
       };
-    } else if (schemaCompliantType === 'react_simulation') {
-      finalContent = componentRef.trim(); 
+      
+      const schemaCompliantType = panel.type ? typeMapping[panel.type] : 'diagram';
+      const semanticAssetId = `ast-${chapterId}-${panel.unitId}-${Date.now()}`;
+
+      let finalContent: any = uploadedUrl;
+      
+      if (schemaCompliantType === 'video_lecture') {
+        finalContent = { 
+          videoUrl: uploadedUrl,
+          stagingKey: stagingKey,
+          status: stagingKey ? 'processing' : 'ready' 
+        };
+      } else if (schemaCompliantType === 'react_simulation') {
+        finalContent = componentRef.trim(); 
+      }
+
+      const contentPayload = {
+        assetId: semanticAssetId,
+        chapterId: chapterId,
+        unitId: panel.unitId,
+        order: 1,
+        type: schemaCompliantType, 
+        title: title,
+        content: finalContent,
+      };
+
+      const dbResponse = await fetch('/api/content/asset', { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(contentPayload),
+      });
+
+      if (!dbResponse.ok) throw new Error('Database transaction failed.');
+
+      setPanel({ isOpen: false, type: null, unitId: null });
+      await fetchDataSummary();
+      
+    } catch (error) {
+      console.error('Pipeline Upload Failed:', error);
+      alert("Asset saving failed. Check console details.");
+    } finally {
+      setIsProcessing(false);
     }
-
-    const contentPayload = {
-      assetId: semanticAssetId,
-      chapterId: chapterId,
-      unitId: panel.unitId,
-      order: 1,
-      type: schemaCompliantType, 
-      title: title,
-      content: finalContent,
-    };
-
-    // 4. Save asset record in MongoDB
-    const dbResponse = await fetch('/api/content/asset', { 
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(contentPayload),
-    });
-
-    if (!dbResponse.ok) throw new Error('Database transaction failed.');
-
-    setPanel({ isOpen: false, type: null, unitId: null });
-    await fetchDataSummary();
-    
-  } catch (error) {
-    console.error('Pipeline Upload Failed:', error);
-    alert("Asset saving failed. Check console details.");
-  } finally {
-    setIsProcessing(false);
-  }
-};
+  };
 
   if (isLoading) return <div className="flex items-center justify-center min-h-[60vh] text-stone-400"><Loader2 className="animate-spin text-emerald-600" size={24} /></div>;
   if (!chapter) return <div className="p-10 text-stone-500">Chapter not found.</div>;
@@ -253,7 +269,7 @@ const handleAssetSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         </button>
       </div>
 
-            {/* CANONICAL CONTEXT / RAG-LITE SUMMARY CARD */}
+      {/* CANONICAL CONTEXT / RAG-LITE SUMMARY CARD */}
       <div className="mb-8 border border-stone-200 bg-white rounded-2xl p-6 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
           <div className="flex items-center gap-2">
@@ -265,26 +281,20 @@ const handleAssetSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
             <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400 bg-stone-100 px-2 py-0.5 rounded">
               RAG-Lite Context
             </span>
-            
-            {/* DEDICATED SAVE CONTEXT BUTTON */}
             <button
               type="button"
               onClick={handleSaveSummary}
               disabled={isSavingSummary}
               className="bg-emerald-700 hover:bg-emerald-800 text-white px-3.5 py-1.5 rounded-xl text-xs font-medium transition-colors flex items-center gap-1.5 shadow-sm disabled:opacity-50"
             >
-              {isSavingSummary ? (
-                <Loader2 size={13} className="animate-spin" />
-              ) : (
-                <Save size={13} />
-              )}
+              {isSavingSummary ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
               <span>{isSavingSummary ? 'Saving...' : 'Save Context'}</span>
             </button>
           </div>
         </div>
 
         <p className="text-xs text-stone-500 mb-4">
-          This summary is fed directly to Groq during podcast generation. Keep it targeted to your grade level to prevent college-level concept hallucinations.
+          This summary is fed directly to Groq during podcast generation. Keep it targeted to your grade level.
         </p>
 
         <textarea
@@ -301,6 +311,7 @@ const handleAssetSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         {chapter.units.map((unit) => {
           const isExpanded = expandedUnit === unit.unitId;
           const counts = inventory[unit.unitId] || { video_lecture: 0, pdf_document: 0, diagram: 0, react_simulation: 0, questionsCount: 0 };
+          const unitAssets = assets.filter(a => a.unitId === unit.unitId);
 
           return (
             <div key={unit.unitId} className={`border border-stone-200 bg-white transition-all duration-300 ${isExpanded ? 'rounded-2xl shadow-sm' : 'rounded-xl hover:border-stone-300'}`}>
@@ -343,8 +354,43 @@ const handleAssetSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
                     </div>
                   </div>
 
-                  {/* ZONE B: QUESTION BANK INGESTION */}
-                  <div>
+                  {/* ZONE B: EXISTING ASSETS MANAGER */}
+                  {unitAssets.length > 0 && (
+                    <div className="mt-8">
+                      <h4 className="text-[10px] font-bold tracking-widest uppercase text-stone-400 mb-3">Managed Assets</h4>
+                      <div className="space-y-2">
+                        {unitAssets.map(asset => (
+                          <div key={asset.assetId} className="flex items-center justify-between p-3 bg-white border border-stone-200 rounded-xl hover:border-stone-300 transition-colors">
+                            <div className="flex items-center gap-4">
+                              {/* Dynamic Thumbnails & Icons */}
+                              {asset.type === 'video_lecture' && <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center"><FileVideo size={18} className="text-emerald-600" /></div>}
+                              {asset.type === 'pdf_document' && <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center"><FileText size={18} className="text-blue-600" /></div>}
+                              {asset.type === 'react_simulation' && <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center"><Beaker size={18} className="text-amber-600" /></div>}
+                              {asset.type === 'diagram' && (
+                                <div className="w-10 h-10 rounded-lg bg-stone-100 overflow-hidden relative border border-stone-200">
+                                  <img src={typeof asset.content === 'string' ? asset.content : asset.content?.url} className="object-cover w-full h-full" alt="thumbnail" />
+                                </div>
+                              )}
+                              <div>
+                                <p className="text-sm font-medium text-stone-800">{asset.title}</p>
+                                <p className="text-[10px] uppercase tracking-wider text-stone-400 font-mono mt-0.5">{asset.type.replace('_', ' ')}</p>
+                              </div>
+                            </div>
+                            <button 
+                              onClick={() => handleDeleteAsset(asset.assetId)} 
+                              disabled={isDeleting === asset.assetId}
+                              className="p-2 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                            >
+                              {isDeleting === asset.assetId ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ZONE C: QUESTION BANK INGESTION */}
+                  <div className="pt-2">
                     <h4 className="text-[10px] font-bold tracking-widest uppercase text-stone-400 mb-3">Question Engine</h4>
                     <button onClick={() => setPanel({ isOpen: true, type: 'questions', unitId: unit.unitId })} className="w-full flex items-center justify-between p-4 bg-white border border-stone-200 rounded-xl hover:border-stone-900 transition-all text-left group">
                       <div className="flex items-center gap-4">
@@ -376,7 +422,6 @@ const handleAssetSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
             <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: "spring", damping: 28, stiffness: 220 }} className={`relative bg-[#FDFCF8] h-full shadow-2xl border-l border-stone-200 flex flex-col z-10 transition-all duration-300 ${panel.type === 'questions' ? 'w-full max-w-2xl' : 'w-full max-w-md'}`}>
               
               {panel.type === 'questions' ? (
-                // DECOUPLED COMPONENT RENDERED HERE
                 <QuestionManager 
                   chapterId={chapterId} 
                   unitId={panel.unitId!} 
@@ -384,7 +429,6 @@ const handleAssetSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
                   onSuccess={fetchDataSummary}
                 />
               ) : (
-                // LEGACY ASSET UPLOADS (Videos, PDFs, Labs)
                 <div className="flex flex-col h-full">
                   <div className="p-6 border-b border-stone-200 flex items-center justify-between bg-white shrink-0">
                     <h2 className="font-serif text-xl text-stone-900">Upload {panel.type?.toUpperCase()} Asset</h2>
@@ -402,12 +446,10 @@ const handleAssetSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
                     <div className="border-2 border-dashed border-stone-200 bg-white p-8 rounded-2xl flex flex-col items-center justify-center text-center relative group hover:border-stone-400 transition-colors cursor-pointer">
                       <UploadCloud size={28} className="text-stone-300 mb-2" />
                       <span className="text-sm font-medium text-stone-700">Attach Media Resource</span>
-                      {/* REMOVED 'required' so users can use the YouTube link instead */}
                       <input type="file" name="fileUpload" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept={panel.type === 'video' ? 'video/mp4' : panel.type === 'pdf' ? 'application/pdf' : 'image/*'} />
                     </div>
                   </div>
                   
-                  {/* CONDITIONAL YOUTUBE INPUT (Only for Videos) */}
                   {panel.type === 'video' && (
                     <>
                       <div className="flex items-center gap-3 text-stone-300 text-xs font-bold uppercase tracking-widest">
@@ -441,7 +483,6 @@ const handleAssetSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
           </div>
         )}
       </AnimatePresence>
-
     </div>
   );
 }
