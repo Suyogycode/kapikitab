@@ -45,3 +45,29 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Database routing error." }, { status: 500 });
   }
 }
+
+export async function DELETE(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const chapterId = searchParams.get("id");
+    
+    if (!chapterId) {
+      return NextResponse.json({ error: "Missing chapterId parameter." }, { status: 400 });
+    }
+
+    await connectToDatabase();
+    
+    // Deletes the chapter structure strictly from MongoDB
+    const deletedChapter = await Chapter.findOneAndDelete({ chapterId });
+
+    if (!deletedChapter) {
+      return NextResponse.json({ error: "Chapter not found." }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, message: "Chapter deleted." }, { status: 200 });
+
+  } catch (error: any) {
+    console.error("Chapter DELETE error:", error);
+    return NextResponse.json({ error: "Failed to process chapter deletion." }, { status: 500 });
+  }
+}

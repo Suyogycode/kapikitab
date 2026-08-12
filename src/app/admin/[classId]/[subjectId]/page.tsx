@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Plus, BookOpen, ChevronRight, Loader2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Plus, BookOpen, ChevronRight, Loader2, AlertCircle, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 
 type UnitSummary = {
@@ -37,6 +37,7 @@ export default function SubjectManagerPage() {
   const [chapters, setChapters] = useState<ChapterSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
@@ -61,17 +62,11 @@ export default function SubjectManagerPage() {
     if (classId && subjectId) fetchChapters();
   }, [classId, subjectId]);
 
-  // --- NEW: INSTANT CHAPTER CREATION LOGIC ---
-    const handleCreateChapter = async () => {
+  const handleCreateChapter = async () => {
     setIsCreating(true);
     
-    // Auto-calculate the next chapter number
     const nextChapNum = chapters.length > 0 ? Math.max(...chapters.map(c => c.chapterNumber)) + 1 : 1;
-    
-    // Format the number to always be two digits (e.g., "01", "02")
     const formattedNum = String(nextChapNum).padStart(2, '0');
-    
-    // NEW CLEAN SLUG: e.g., ch-c12-math-01
     const newChapterId = `ch-${classId}-${subjectId}-${formattedNum}`;
 
     const newChapterPayload = {
@@ -83,8 +78,6 @@ export default function SubjectManagerPage() {
       units: []
     };
 
-    // ... rest of the fetch logic remains exactly the same
-
     try {
       const res = await fetch('/api/content/chapter', {
         method: 'POST',
@@ -93,7 +86,6 @@ export default function SubjectManagerPage() {
       });
 
       if (res.ok) {
-        // Boom. Created! Route them directly to the new workspace editor.
         router.push(`/admin/chapter/${newChapterId}`);
       } else {
         throw new Error("Failed to create the draft chapter.");
@@ -102,6 +94,27 @@ export default function SubjectManagerPage() {
       console.error(err);
       setErrorMsg(err.message || "Failed to generate a new chapter workspace.");
       setIsCreating(false);
+    }
+  };
+
+  // --- NEW: DELETE CHAPTER LOGIC ---
+  const handleDeleteChapter = async (e: React.MouseEvent, chapterId: string) => {
+    e.stopPropagation(); // Prevents the row click from navigating to the chapter
+    
+    if (!confirm("Are you sure you want to delete this chapter? This action cannot be undone.")) return;
+    
+    setIsDeleting(chapterId);
+    try {
+      const res = await fetch(`/api/content/chapter?id=${chapterId}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error("Failed to delete chapter.");
+      
+      // Instantly remove it from the UI without reloading the page
+      setChapters(prev => prev.filter(c => c.chapterId !== chapterId));
+    } catch (error) {
+      console.error(error);
+      alert("Failed to delete the chapter.");
+    } finally {
+      setIsDeleting(null);
     }
   };
 
@@ -128,7 +141,6 @@ export default function SubjectManagerPage() {
           </p>
         </div>
 
-        {/* --- FIXED: ATTACHED THE NEW FUNCTION TO THE BUTTON --- */}
         <button 
           onClick={handleCreateChapter}
           disabled={isCreating}
@@ -185,11 +197,23 @@ export default function SubjectManagerPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center text-stone-400 group-hover:text-stone-900 transition-colors shrink-0">
-                  <span className="text-xs font-medium mr-1 opacity-0 group-hover:opacity-100 transition-all transform translate-x-1 group-hover:translate-x-0">
-                    Workspace
-                  </span>
-                  <ChevronRight size={16} className="transform group-hover:translate-x-0.5 transition-transform" />
+                {/* --- ADDED DELETE BUTTON SECTION --- */}
+                <div className="flex items-center shrink-0">
+                  <div className="flex items-center text-stone-400 group-hover:text-stone-900 transition-colors mr-4">
+                    <span className="text-xs font-medium mr-1 opacity-0 group-hover:opacity-100 transition-all transform translate-x-1 group-hover:translate-x-0">
+                      Workspace
+                    </span>
+                    <ChevronRight size={16} className="transform group-hover:translate-x-0.5 transition-transform" />
+                  </div>
+                  
+                  <button 
+                    onClick={(e) => handleDeleteChapter(e, chapter.chapterId)}
+                    disabled={isDeleting === chapter.chapterId}
+                    className="p-2 text-stone-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                    title="Delete Chapter"
+                  >
+                    {isDeleting === chapter.chapterId ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />}
+                  </button>
                 </div>
               </motion.div>
             ))}
