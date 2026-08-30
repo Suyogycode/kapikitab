@@ -2,20 +2,21 @@
 
 import React from 'react';
 import dynamic from 'next/dynamic';
-import { Loader2 } from 'lucide-react';
 
 // Domain 2 Default Fallback
 import XRViewer from './model-viewer/XRViewer';
 
-// ------------------------------------------------------------------
-// A universal loading screen to keep the UI smooth while heavy 3D loads
-// ------------------------------------------------------------------
-const LoadingState = () => (
-  <div className="flex flex-col items-center justify-center h-full w-full min-h-[400px] bg-stone-900/50 rounded-2xl border border-stone-800">
-    <Loader2 className="animate-spin text-emerald-500 mb-3" size={32} />
-    <span className="text-stone-400 text-xs font-mono uppercase tracking-widest">Loading Simulation...</span>
-  </div>
-);
+// THE FIX: Import LoadingState from the new shared file
+import { LoadingState } from './LoadingState';
+
+// Curriculum Registries
+import { class8MathRegistry } from './curriculum/math/class-8/class8MathRegistry';
+
+const masterCurriculumRegistry: Record<string, React.ComponentType<any>> = {
+  ...class8MathRegistry,
+};
+
+// ... keep the rest of your pure2DRegistry, modelViewerRegistry, and the main component exactly as they were! ...
 
 // ==================================================================
 // DOMAIN 1: 2D React Simulations
@@ -39,7 +40,6 @@ const modelViewerRegistry: Record<string, React.ComponentType<any>> = {
 // ==================================================================
 // DOMAIN 3: Heavy Spatial Engine (R3F)
 // For fully interactive physics and chemistry labs.
-// ssr: false is strictly required so Next.js doesn't crash on the server!
 // ==================================================================
 const spatialEngineRegistry: Record<string, React.ComponentType<any>> = {
   'GravityLabR3F': dynamic(() => import('./spatial-engine/labs/GravityLabR3F'), { ssr: false, loading: LoadingState }),
@@ -54,18 +54,24 @@ const spatialEngineRegistry: Record<string, React.ComponentType<any>> = {
 interface SimulationRouterProps {
   activeSim: {
     title: string;
-    modelUrl: string;
+    modelUrl?: string;
     componentRef?: string;
   };
   isFullscreen: boolean;
 }
 
 export default function SimulationRouter({ activeSim, isFullscreen }: SimulationRouterProps) {
-  const ref = activeSim.componentRef;
+  const ref = activeSim?.componentRef;
 
   // If the admin assigned a specific code file in the database:
   if (ref) {
     
+    // NEW ROUTE: Check Master Curriculum Registry First
+    if (masterCurriculumRegistry[ref]) {
+      const CurriculumSim = masterCurriculumRegistry[ref];
+      return <CurriculumSim modelUrl={activeSim.modelUrl} isFullscreen={isFullscreen} title={activeSim.title} />;
+    }
+
     // Route 1: DOMAIN 1
     if (pure2DRegistry[ref]) {
       const Lab2D = pure2DRegistry[ref];
@@ -75,7 +81,6 @@ export default function SimulationRouter({ activeSim, isFullscreen }: Simulation
     // Route 2: DOMAIN 3 (The Spatial Engine)
     if (spatialEngineRegistry[ref]) {
       const SpatialLab = spatialEngineRegistry[ref];
-      // We pass the modelUrl in case your R3F code wants to load a Blender object!
       return <SpatialLab modelUrl={activeSim.modelUrl} isFullscreen={isFullscreen} title={activeSim.title} />;
     }
 
@@ -88,14 +93,13 @@ export default function SimulationRouter({ activeSim, isFullscreen }: Simulation
 
   // Route 4: Fallback
   // The admin uploaded a 3D model but didn't assign any code to it.
-  // We just render it safely in the standard viewer.
-  if (activeSim.modelUrl) {
+  if (activeSim?.modelUrl) {
     return <XRViewer src={activeSim.modelUrl} alt={activeSim.title} isFullscreen={isFullscreen} />;
   }
 
   // Error Catching
   return (
-    <div className="p-6 bg-red-950/30 border border-red-900 rounded-xl text-red-400 text-sm flex flex-col items-center justify-center h-full">
+    <div className="p-6 bg-red-950/30 border border-red-900 rounded-xl text-red-400 text-sm flex flex-col items-center justify-center h-full min-h-[400px]">
       <strong>Configuration Error</strong>
       <p>Simulation "{ref || 'Unknown'}" is missing from the Router.</p>
     </div>

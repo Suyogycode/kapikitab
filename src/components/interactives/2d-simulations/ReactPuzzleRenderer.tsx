@@ -2,34 +2,31 @@
 
 import React from 'react';
 import dynamic from 'next/dynamic';
-import { Loader2 } from 'lucide-react';
+import { LoadingState } from '../LoadingState';
 
-// ==================================================================
-// DOMAIN 1 ONLY: 2D React Simulations
-// ==================================================================
+// Import our new federated registry
+import { class8MathRegistry } from '../curriculum/math/class-8/class8MathRegistry';
+
+// Legacy 2D Registry
 const pure2DRegistry: Record<string, React.ComponentType<any>> = {
-  'FunctionMachineLab': dynamic(() => import('./FunctionMachineLab'), { 
-    ssr: false, /* <--- THE FIX: This stops the Turbopack negative timestamp crash! */
-    loading: () => (
-      <div className="flex flex-col items-center justify-center h-64 w-full bg-slate-50 rounded-2xl border border-slate-200">
-        <Loader2 className="animate-spin text-indigo-500 mb-3" size={24} />
-        <span className="text-slate-500 text-xs font-mono uppercase tracking-widest">Loading Puzzle...</span>
-      </div>
-    )
-  }),
+  'FunctionMachineLab': dynamic(() => import('./FunctionMachineLab'), { loading: LoadingState }),
 };
 
-interface ReactPuzzleRendererProps {
-  componentRef: string;
-}
+// Merge legacy files with the new curriculum architecture
+const masterRegistry: Record<string, React.ComponentType<any>> = {
+  ...pure2DRegistry,
+  ...class8MathRegistry,
+};
 
-export default function ReactPuzzleRenderer({ componentRef }: ReactPuzzleRendererProps) {
-  const PuzzleComponent = pure2DRegistry[componentRef];
+export default function ReactPuzzleRenderer({ componentRef }: { componentRef?: string }) {
+  if (!componentRef) return null;
+
+  const PuzzleComponent = masterRegistry[componentRef];
 
   if (!PuzzleComponent) {
     return (
-      <div className="p-6 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-sm">
-        Interactive puzzle <strong>"{componentRef}"</strong> is not registered in the 2D domain.
+      <div className="p-6 bg-amber-50 border border-amber-200 rounded-xl text-amber-700 text-sm">
+        Interactive puzzle <strong>"{componentRef}"</strong> is not registered in the new curriculum domain.
       </div>
     );
   }
