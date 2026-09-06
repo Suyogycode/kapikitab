@@ -9,8 +9,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
-import ReactPuzzleRenderer from '@/components/interactives/2d-simulations/ReactPuzzleRenderer';
-import AudioOverviewPlayer from '@/app/learning/AudioOverviewPlayer';
+import SimulationRouter from '@/components/interactives/SimulationRouter';import AudioOverviewPlayer from '@/app/learning/AudioOverviewPlayer';
 import HlsVideoPlayer from '@/components/player/HlsVideoPlayer';
 
 export default function DynamicLearningWorkspace() {
@@ -235,7 +234,13 @@ export default function DynamicLearningWorkspace() {
                             <h3 className="text-xl font-serif text-stone-900 dark:text-slate-100 transition-colors">{lab.title}</h3>
                           </div>
                           {labComponentRef ? (
-                            <ReactPuzzleRenderer componentRef={labComponentRef} />
+                            <SimulationRouter 
+                              activeSim={{ 
+                                title: lab.title, 
+                                componentRef: labComponentRef 
+                              }} 
+                              isFullscreen={false} 
+                            />
                           ) : (
                             <div className="p-6 bg-amber-50 dark:bg-blue-900/10 border border-amber-200 dark:border-blue-800/30 rounded-2xl text-amber-800 dark:text-blue-300 text-sm transition-colors">
                               No <code>componentRef</code> pointer found for this lab asset.

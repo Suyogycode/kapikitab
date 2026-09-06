@@ -3,6 +3,8 @@
 import React from 'react';
 import dynamic from 'next/dynamic';
 
+// Domain 1 has been deleted.
+
 // Domain 2 Default Fallback
 import XRViewer from './model-viewer/XRViewer';
 
@@ -10,21 +12,14 @@ import XRViewer from './model-viewer/XRViewer';
 import { LoadingState } from './LoadingState';
 
 // Curriculum Registries
-import { class8MathRegistry } from './curriculum/math/class-8/class8MathRegistry';
+import { class8MathRegistry } from '@/components/interactives/curriculum/math/class-8/class8MathRegistry';
+import { class9MathRegistry } from '@/components/interactives/curriculum/math/class-9/class9MathRegistry';
 
-const masterCurriculumRegistry: Record<string, React.ComponentType<any>> = {
+export const MasterSimulationRegistry = {
   ...class8MathRegistry,
+  ...class9MathRegistry,
 };
 
-// ... keep the rest of your pure2DRegistry, modelViewerRegistry, and the main component exactly as they were! ...
-
-// ==================================================================
-// DOMAIN 1: 2D React Simulations
-// Standard web React puzzles with zero 3D overhead.
-// ==================================================================
-const pure2DRegistry: Record<string, React.ComponentType<any>> = {
-  'FunctionMachineLab': dynamic(() => import('./2d-simulations/FunctionMachineLab'), { loading: LoadingState }),
-};
 
 // ==================================================================
 // DOMAIN 2: Lightweight 3D (<model-viewer>)
@@ -62,21 +57,17 @@ interface SimulationRouterProps {
 
 export default function SimulationRouter({ activeSim, isFullscreen }: SimulationRouterProps) {
   const ref = activeSim?.componentRef;
-
+console.log("ROUTER DIAGNOSTIC -> Received Ref:", ref, "| Found in Registry:", !!MasterSimulationRegistry[ref as keyof typeof MasterSimulationRegistry]);
   // If the admin assigned a specific code file in the database:
   if (ref) {
     
     // NEW ROUTE: Check Master Curriculum Registry First
-    if (masterCurriculumRegistry[ref]) {
-      const CurriculumSim = masterCurriculumRegistry[ref];
+    // FIX: Using the correct variable name "MasterSimulationRegistry"
+    if (MasterSimulationRegistry[ref as keyof typeof MasterSimulationRegistry]) {
+      const CurriculumSim = MasterSimulationRegistry[ref as keyof typeof MasterSimulationRegistry];
       return <CurriculumSim modelUrl={activeSim.modelUrl} isFullscreen={isFullscreen} title={activeSim.title} />;
     }
 
-    // Route 1: DOMAIN 1
-    if (pure2DRegistry[ref]) {
-      const Lab2D = pure2DRegistry[ref];
-      return <Lab2D />;
-    }
 
     // Route 2: DOMAIN 3 (The Spatial Engine)
     if (spatialEngineRegistry[ref]) {
