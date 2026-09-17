@@ -14,10 +14,12 @@ import { LoadingState } from './LoadingState';
 // Curriculum Registries
 import { class8MathRegistry } from '@/components/interactives/curriculum/math/class-8/class8MathRegistry';
 import { class9MathRegistry } from '@/components/interactives/curriculum/math/class-9/class9MathRegistry';
+import { class10MathRegistry } from './curriculum/math/class-10/class10MathRegistry';
 
 export const MasterSimulationRegistry = {
   ...class8MathRegistry,
   ...class9MathRegistry,
+  ...class10MathRegistry,
 };
 
 
