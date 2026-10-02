@@ -16,12 +16,14 @@ import { class8MathRegistry } from '@/components/interactives/curriculum/math/cl
 import { class9MathRegistry } from '@/components/interactives/curriculum/math/class-9/class9MathRegistry';
 import { class10MathRegistry } from './curriculum/math/class-10/class10MathRegistry';
 import { class11MathRegistry } from './curriculum/math/class-11/class11MathRegistry';
+import { class12MathRegistry } from './curriculum/math/class-12/class12MathRegistry';
 
 export const MasterSimulationRegistry = {
   ...class8MathRegistry,
   ...class9MathRegistry,
   ...class10MathRegistry,
   ...class11MathRegistry,
+  ...class12MathRegistry,
 };
 
 
