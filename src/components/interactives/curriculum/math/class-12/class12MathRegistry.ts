@@ -29,4 +29,41 @@ export const class12MathRegistry: Record<string, React.ComponentType<any>> = {
 
   // Chapter 6: Application of Derivatives
   'ScalingRipple': dynamic(() => import('./ch-06-application-of-derivatives/ScalingRipple'), { ssr: false, loading: LoadingState }),
+  'SlopeSwitch': dynamic(() => import('./ch-06-application-of-derivatives/SlopeSwitch'), { ssr: false, loading: LoadingState }),
+  'ValleyTrap': dynamic(() => import('./ch-06-application-of-derivatives/ValleyTrap'), { ssr: false, loading: LoadingState }),
+
+  // Chapter 7: Integrals
+  'AntiDerivativeSlopes': dynamic(() => import('./ch-07-integrals/AntiDerivativeSlopes'), { ssr: false, loading: LoadingState }),
+  'RiemannSqueezer': dynamic(() => import('./ch-07-integrals/RiemannSqueezer'), { ssr: false, loading: LoadingState }),
+  'SubstitutionMorph': dynamic(() => import('./ch-07-integrals/SubstitutionMorph'), { ssr: false, loading: LoadingState }),
+
+  // Chapter 8: Application of Integrals
+  'VerticalSqueezer': dynamic(() => import('./ch-08-application-of-integrals/VerticalSqueezer'), { ssr: false, loading: LoadingState }),
+  'SymmetricQuadrant': dynamic(() => import('./ch-08-application-of-integrals/SymmetricQuadrant'), { ssr: false, loading: LoadingState }),
+  'AlternatingWave': dynamic(() => import('./ch-08-application-of-integrals/AlternatingWave'), { ssr: false, loading: LoadingState }),
+
+  // Chapter 9: Differential Equations
+  'VectorRiver': dynamic(() => import('./ch-09-differential-equations/VectorRiver'), { ssr: false, loading: LoadingState }),
+  'HomogeneousResizer': dynamic(() => import('./ch-09-differential-equations/HomogeneousResizer'), { ssr: false, loading: LoadingState }),
+  'IntegratingCatalyst': dynamic(() => import('./ch-09-differential-equations/IntegratingCatalyst'), { ssr: false, loading: LoadingState }),
+
+  // Chapter 10: Vector Algebra
+  'HeadToTailConveyor': dynamic(() => import('./ch-10-vector-algebra/HeadToTailConveyor'), { ssr: false, loading: LoadingState }),
+  'OrthogonalCrossBox': dynamic(() => import('./ch-10-vector-algebra/OrthogonalCrossBox'), { ssr: false, loading: LoadingState }),
+  'DotProductProjector': dynamic(() => import('./ch-10-vector-algebra/DotProductProjector'), { ssr: false, loading: LoadingState }),
+
+  // Chapter 11: Three-Dimensional Geometry
+  'DirectionalCompass': dynamic(() => import('./ch-11-three-dimensional-geometry/DirectionalCompass'), { ssr: false, loading: LoadingState }),
+  'RayTracer': dynamic(() => import('./ch-11-three-dimensional-geometry/RayTracer'), { ssr: false, loading: LoadingState }),
+  'SkewBridge': dynamic(() => import('./ch-11-three-dimensional-geometry/SkewBridge'), { ssr: false, loading: LoadingState }),
+
+  // Chapter 12: Linear Programming
+  'ConstraintIntersectionGrid': dynamic(() => import('./ch-12-linear-programming/ConstraintIntersectionGrid'), { ssr: false, loading: LoadingState }),
+  'VertexRadar': dynamic(() => import('./ch-12-linear-programming/VertexRadar'), { ssr: false, loading: LoadingState }),
+  'IsoProfitSweeper': dynamic(() => import('./ch-12-linear-programming/IsoProfitSweeper'), { ssr: false, loading: LoadingState }),
+
+  // Chapter 13: Probability
+  'ShrinkingUniverse': dynamic(() => import('./ch-13-probability/ShrinkingUniverse'), { ssr: false, loading: LoadingState }),
+  'OrthogonalGrid': dynamic(() => import('./ch-13-probability/OrthogonalGrid'), { ssr: false, loading: LoadingState }),
+  'ReverseFlowMachine': dynamic(() => import('./ch-13-probability/ReverseFlowMachine'), { ssr: false, loading: LoadingState }),
 };
