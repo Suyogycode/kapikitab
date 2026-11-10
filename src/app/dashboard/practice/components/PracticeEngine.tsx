@@ -7,6 +7,7 @@ import {
   Sparkles, SkipForward, BookOpen, Layers, Hash, CheckSquare
 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
+import { MathText } from '@/components/MathText';
 
 type Option = { id: string; text: string; };
 type Question = {
@@ -325,7 +326,7 @@ export default function PracticeEngine() {
              {currentQ.type.replace('_', ' ')}
           </div>
           <h2 className="text-xl sm:text-3xl md:text-4xl font-serif text-stone-900 dark:text-slate-100 leading-snug transition-colors">
-            {currentQ.text}
+            <MathText content={currentQ.text} />
           </h2>
         </div>
 
@@ -379,7 +380,9 @@ export default function PracticeEngine() {
                     }`}>
                       {opt.id}
                     </span>
-                    <span className="break-all sm:break-normal pr-4">{opt.text}</span>
+                    <span className="break-words sm:break-normal pr-4">
+                      <MathText content={opt.text} />
+                    </span>
                   </div>
                   {isLocked && isActuallyCorrect && <CheckCircle2 size={20} className="text-emerald-600 dark:text-emerald-400 shrink-0" />}
                   {isLocked && isSelected && !isActuallyCorrect && <XCircle size={20} className="text-red-500 dark:text-red-400 shrink-0" />}
@@ -400,7 +403,9 @@ export default function PracticeEngine() {
           {isLocked && currentQ.explanation && (
             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-6 p-4 rounded-2xl bg-stone-100/50 dark:bg-[#151821] border border-stone-200 dark:border-slate-700 transition-colors">
                <span className="text-[10px] font-bold tracking-widest uppercase text-stone-500 dark:text-slate-500 mb-1 block transition-colors">Explanation</span>
-               <p className="text-sm text-stone-700 dark:text-slate-300 leading-relaxed font-medium transition-colors">{currentQ.explanation}</p>
+               <div className="text-sm text-stone-700 dark:text-slate-300 leading-relaxed font-medium transition-colors">
+                 <MathText content={currentQ.explanation} />
+               </div>
             </motion.div>
           )}
         </AnimatePresence>

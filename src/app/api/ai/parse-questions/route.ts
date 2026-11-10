@@ -30,18 +30,23 @@ export async function POST(req: NextRequest) {
       Extract all the educational questions visible in this image. 
       Return ONLY a strict JSON object with a single array called "rawTextQuestions" containing the text of each question.
       Do NOT attempt to solve them or create options. Just transcribe the text accurately.
+
+      MATH TRANSCRIPTION RULES:
+      - Transcribe all mathematical expressions, fractions, exponents, and symbols directly into valid LaTeX enclosed in single dollar signs ($...$).
+      - NEVER use plain-text ASCII math like "/", "*", or unformatted "^". 
+      - Use \\frac{a}{b} for fractions, \\times or \\cdot for multiplication, and \\sqrt{} for roots.
       
       EXPECTED OUTPUT:
       {
         "rawTextQuestions": [
-          "Question 1 text...",
+          "What is the value of $\\frac{x^2 + 1}{2}$ when $x = 3$?",
           "Question 2 text..."
         ]
       }
     `;
 
     const visionCompletion = await groq.chat.completions.create({
-      model: "meta-llama/llama-4-scout-17b-16e-instruct", 
+      model: "qwen/qwen3.8-27b", 
       messages: [
         {
           role: "user",
@@ -69,19 +74,28 @@ export async function POST(req: NextRequest) {
     // ==========================================
     // STEP 2: TEXT MODEL (Reasoning & Generation)
     // ==========================================
+    const systemPrompt = `
+      You are an expert STEM curriculum designer that outputs strict JSON.
+
+      STRICT MATH & LATEX FORMATTING RULES:
+      1. Enclose ALL math variables, numbers with units, equations, and expressions in single dollar signs ($...$) for inline math or double dollar signs ($$...$$) for block equations.
+      2. NEVER use ugly plain-text math symbols outside or inside LaTeX:
+         - NO "/" for division -> ALWAYS use \\frac{a}{b} or \\div
+         - NO "*" for multiplication -> ALWAYS use \\times or \\cdot
+         - NO bare "^" or "_" outside of $...$ delimiters -> ALWAYS write $x^2$ or $a_1$
+         - NO ">=" or "<=" -> ALWAYS use \\geq or \\leq
+         - NO "sqrt()" -> ALWAYS use \\sqrt{}
+      3. Since your output is a valid JSON object, escape every LaTeX backslash properly (e.g., "\\frac{1}{2}", "\\times", "\\sqrt{x}").
+      4. You MUST return a strict JSON object with a single array called "extractedQuestions".
+      5. LOGIC RULE: You MUST randomly distribute the correct answer across options A, B, C, and D for each question. Do NOT make 'A' the correct answer every time.
+    `;
+
     const textPrompt = `
-      You are an expert STEM curriculum designer.
-      
       For every raw question text provided below, perform these tasks:
-      1. Generate 4 plausible multiple-choice options (A, B, C, D).
-      2. Identify the correct answer.
-      3. Write a brief, helpful explanation of why that answer is correct.
-      
-      CRITICAL JSON FORMATTING & LOGIC RULES:
-      - Wrap all mathematical formulas, symbols, and equations in standard LaTeX syntax (inline '$' and block '$$').
-      - You must DOUBLE-ESCAPE all backslashes in your LaTeX syntax for the JSON string. (e.g., write "\\\\frac" instead of "\\frac").
-      - You MUST return a strict JSON object with a single array called "extractedQuestions".
-      - LOGIC RULE: You MUST randomly distribute the correct answer across options A, B, C, and D for each question. Do NOT make 'A' the correct answer every time.
+      1. Clean up the question text so all math strictly follows the LaTeX rules.
+      2. Generate 4 plausible multiple-choice options (A, B, C, D) using proper LaTeX.
+      3. Identify the correct answer.
+      4. Write a brief, helpful explanation of why that answer is correct using proper LaTeX.
       
       RAW QUESTIONS TO PROCESS:
       ${JSON.stringify(extractedTexts)}
@@ -91,23 +105,24 @@ export async function POST(req: NextRequest) {
         "extractedQuestions": [
           {
             "type": "mcq_single",
-            "text": "Question text...",
+            "text": "Question text with $LaTeX$...",
             "correctAnswers": ["C"], 
             "options": [
-              { "id": "A", "text": "Distractor" },
-              { "id": "B", "text": "Distractor" },
-              { "id": "C", "text": "Correct Option" },
-              { "id": "D", "text": "Distractor" }
+              { "id": "A", "text": "$\\frac{1}{2}$" },
+              { "id": "B", "text": "$\\frac{3}{4}$" },
+              { "id": "C", "text": "$2 \\times 10^3$" },
+              { "id": "D", "text": "$\\sqrt{5}$" }
             ],
-            "explanation": "Explanation here..."
+            "explanation": "Explanation with $LaTeX$ here..."
           }
         ]
       }
     `;
 
     const textCompletion = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile", 
+      model: "qwen/qwen3.8-27b", 
       messages: [
+        { role: "system", content: systemPrompt },
         { role: "user", content: textPrompt }
       ],
       temperature: 0.2,

@@ -9,8 +9,10 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
-import SimulationRouter from '@/components/interactives/SimulationRouter';import AudioOverviewPlayer from '@/app/learning/AudioOverviewPlayer';
+import SimulationRouter from '@/components/interactives/SimulationRouter';
+import AudioOverviewPlayer from '@/app/learning/AudioOverviewPlayer';
 import HlsVideoPlayer from '@/components/player/HlsVideoPlayer';
+import { MathText } from '@/components/MathText';
 
 export default function DynamicLearningWorkspace() {
   const params = useParams();
@@ -323,9 +325,9 @@ export default function DynamicLearningWorkspace() {
                           transition={{ duration: 0.2, ease: "easeOut" }}
                           className="w-full"
                         >
-                          <p className="text-lg font-medium text-stone-800 dark:text-slate-200 mb-8 leading-relaxed transition-colors">
-                            {currentQuestion.text}
-                          </p>
+                          <div className="text-lg font-medium text-stone-800 dark:text-slate-200 mb-8 leading-relaxed transition-colors">
+                            <MathText content={currentQuestion.text} />
+                          </div>
 
                           {currentQuestion.type === 'numeric' ? (
                             <div className="flex items-center space-x-4">
@@ -366,8 +368,11 @@ export default function DynamicLearningWorkspace() {
                                     onClick={() => handlePracticeSelect(currentQuestion.questionId, opt.id)} 
                                     className={`p-4 text-left rounded-xl border-2 transition-all font-mono text-sm flex items-center justify-between ${btnStyle}`}
                                   >
-                                    <span><span className="opacity-50 mr-2">{opt.id}.</span>{opt.text}</span>
-                                    {isAnswered && currentQuestion.correctAnswers?.includes(opt.id) && <CheckCircle2 size={18} className="text-emerald-500 dark:text-emerald-400" />}
+                                    <span className="flex items-center">
+                                      <span className="opacity-50 mr-2">{opt.id}.</span>
+                                      <MathText content={opt.text} />
+                                    </span>
+                                    {isAnswered && currentQuestion.correctAnswers?.includes(opt.id) && <CheckCircle2 size={18} className="text-emerald-500 dark:text-emerald-400 shrink-0 ml-2" />}
                                   </button>
                                 );
                               })}
@@ -385,9 +390,9 @@ export default function DynamicLearningWorkspace() {
                               }`}
                             >
                               <h4 className="text-xs font-bold tracking-widest uppercase text-stone-500 dark:text-slate-500 mb-2 transition-colors">Explanation</h4>
-                              <p className="text-sm text-stone-700 dark:text-slate-300 font-medium leading-relaxed transition-colors">
-                                {currentQuestion.explanation}
-                              </p>
+                              <div className="text-sm text-stone-700 dark:text-slate-300 font-medium leading-relaxed transition-colors">
+                                <MathText content={currentQuestion.explanation} />
+                              </div>
                             </motion.div>
                           )}
 
