@@ -1,10 +1,11 @@
+// src/components/admin/QuestionManager.tsx
 "use client";
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Sparkles, PenTool, UploadCloud, Database, Loader2, 
-  Check, FileJson, CheckSquare, ListChecks, Hash
+  Check, FileJson, CheckSquare, ListChecks, Hash, FileText
 } from 'lucide-react';
 
 interface QuestionManagerProps {
@@ -17,9 +18,50 @@ interface QuestionManagerProps {
 type TabType = 'manual' | 'ai_pipeline';
 type ManualType = 'mcq_single' | 'mcq_multiple' | 'numeric';
 
+// ==========================================
+// 1. HELPER: CONVERT PDF PAGES TO PNG IMAGES
+// ==========================================
+async function convertPdfToImages(pdfFile: File): Promise<File[]> {
+  const pdfjsLib = await import('pdfjs-dist');
+
+  // Load the matching PDF.js worker from CDN
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+
+  const arrayBuffer = await pdfFile.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  const imageFiles: File[] = [];
+
+  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+    const page = await pdf.getPage(pageNum);
+    const viewport = page.getViewport({ scale: 2.0 }); // 2x scale for crisp math/LaTeX OCR
+
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d')!;
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+
+    await page.render({ canvas, canvasContext: context, viewport }).promise;
+
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, 'image/png', 0.95)
+    );
+
+    if (blob) {
+      imageFiles.push(
+        new File([blob], `${pdfFile.name.replace(/\.pdf$/i, '')}-page-${pageNum}.png`, {
+          type: 'image/png',
+        })
+      );
+    }
+  }
+
+  return imageFiles;
+}
+
 export default function QuestionManager({ chapterId, unitId, onClose, onSuccess }: QuestionManagerProps) {
   const [activeTab, setActiveTab] = useState<TabType>('ai_pipeline');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string>('');
 
   // --- MANUAL STATE ---
   const [manualType, setManualType] = useState<ManualType>('mcq_single');
@@ -78,17 +120,31 @@ export default function QuestionManager({ chapterId, unitId, onClose, onSuccess 
     else setCorrectOptions(prev => prev.includes(opt) ? prev.filter(o => o !== opt) : [...prev, opt]);
   };
 
-  // --- HANDLER: AI PIPELINE PARSE ---
+  // ==========================================
+  // 2. UPDATED HANDLER: AI PIPELINE PARSE (WITH PDF CONVERSION)
+  // ==========================================
   const handleRunAIPipeline = async () => {
     if (selectedFiles.length === 0) return;
     setIsProcessing(true);
 
-    const formData = new FormData();
-    selectedFiles.forEach(file => formData.append('files', file));
-    formData.append('chapterId', chapterId);
-    formData.append('unitId', unitId);
-
     try {
+      const formData = new FormData();
+      formData.append('chapterId', chapterId);
+      formData.append('unitId', unitId);
+
+      // Convert any uploaded PDF into high-res page PNGs before appending to FormData
+      for (const file of selectedFiles) {
+        const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+        if (isPdf) {
+          setStatusMessage(`Rendering pages from ${file.name}...`);
+          const pageImages = await convertPdfToImages(file);
+          pageImages.forEach((imgFile) => formData.append('files', imgFile));
+        } else {
+          formData.append('files', file);
+        }
+      }
+
+      setStatusMessage('Extracting & formatting questions with Groq Vision...');
       const res = await fetch('/api/ai/parse-questions', {
         method: 'POST',
         body: formData,
@@ -98,13 +154,15 @@ export default function QuestionManager({ chapterId, unitId, onClose, onSuccess 
       
       setParsedPreview(data.extractedQuestions);
     } catch (err: any) {
+      console.error(err);
       alert(err.message);
     } finally {
+      setStatusMessage('');
       setIsProcessing(false);
     }
   };
 
-  // --- NEW HANDLERS: EDIT AI PREVIEW DATA BEFORE COMMIT ---
+  // --- HANDLERS: EDIT AI PREVIEW DATA BEFORE COMMIT ---
   const updatePreviewQuestionText = (index: number, newText: string) => {
     setParsedPreview(prev => {
       if (!prev) return null;
@@ -199,15 +257,51 @@ export default function QuestionManager({ chapterId, unitId, onClose, onSuccess 
             <motion.div key="ai" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="flex flex-col h-full">
               {!parsedPreview ? (
                 <div className="flex-1 flex flex-col justify-center">
-                  <div className="w-full border-2 border-dashed border-stone-200 bg-white p-12 rounded-2xl flex flex-col items-center text-center relative hover:border-stone-400 transition-colors cursor-pointer mb-6">
+                  <div className="w-full border-2 border-dashed border-stone-200 bg-white p-12 rounded-2xl flex flex-col items-center text-center relative hover:border-stone-400 transition-colors cursor-pointer mb-4">
                     <UploadCloud size={36} className="text-stone-300 mb-3" />
                     <span className="text-sm font-medium text-stone-800">Drop Source PDFs or Images</span>
                     <span className="text-xs text-stone-400 font-light mt-1">Ready for Groq Vision Processing</span>
-                    <input type="file" multiple onChange={(e) => setSelectedFiles(Array.from(e.target.files || []))} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept="application/pdf,image/*" />
+                    <input 
+                      type="file" 
+                      multiple 
+                      onChange={(e) => setSelectedFiles(Array.from(e.target.files || []))} 
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+                      accept="application/pdf,.pdf,image/*" 
+                    />
                   </div>
-                  <button type="button" onClick={handleRunAIPipeline} disabled={isProcessing || selectedFiles.length === 0} className="w-full bg-stone-900 hover:bg-stone-800 text-white p-3.5 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-40">
+
+                  {/* Selected Files Indicator */}
+                  {selectedFiles.length > 0 && (
+                    <div className="mb-5 p-3 bg-stone-100 border border-stone-200 rounded-xl space-y-1.5">
+                      <div className="flex items-center justify-between text-xs font-medium text-stone-700">
+                        <span>Selected Files ({selectedFiles.length})</span>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedFiles([])}
+                          className="text-stone-400 hover:text-stone-700 underline"
+                        >
+                          Clear
+                        </button>
+                      </div>
+                      <div className="max-h-24 overflow-y-auto space-y-1">
+                        {selectedFiles.map((f, i) => (
+                          <div key={i} className="flex items-center gap-2 text-xs text-stone-600 font-mono truncate">
+                            <FileText size={13} className="text-emerald-600 shrink-0" />
+                            <span className="truncate">{f.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <button 
+                    type="button" 
+                    onClick={handleRunAIPipeline} 
+                    disabled={isProcessing || selectedFiles.length === 0} 
+                    className="w-full bg-stone-900 hover:bg-stone-800 text-white p-3.5 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-40"
+                  >
                     {isProcessing ? <Loader2 size={16} className="animate-spin" /> : <Database size={16} />}
-                    <span>Execute Extraction Engine</span>
+                    <span>{statusMessage || 'Execute Extraction Engine'}</span>
                   </button>
                 </div>
               ) : (
